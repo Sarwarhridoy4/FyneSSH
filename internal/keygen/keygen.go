@@ -7,6 +7,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"os"
+	"strings"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -80,9 +81,15 @@ func Generate(opts Options) (*KeyPair, error) {
 		comment = "FyneSSH generated key"
 	}
 
+	authorized := strings.TrimSpace(string(ssh.MarshalAuthorizedKey(sshPub)))
+	if comment != "" {
+		authorized = authorized + " " + comment
+	}
+	authorized = authorized + "\n"
+
 	return &KeyPair{
 		PrivateKeyPEM: privPEM,
-		PublicKeySSH:  string(ssh.MarshalAuthorizedKey(sshPub)) + comment + "\n",
+		PublicKeySSH:  authorized,
 		Algorithm:     opts.Algorithm,
 		Comment:       comment,
 	}, nil
