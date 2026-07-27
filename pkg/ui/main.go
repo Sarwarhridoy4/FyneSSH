@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -38,7 +39,7 @@ const (
 	placeholderComment    = "optional key comment"
 	placeholderPassphrase = "optional passphrase"
 	defaultPrivateName    = "id_ed25519"
-	defaultPublicName     = "id_ed25519.pub"
+	defaultPublicName     = "id_ed25519"
 	defaultComment        = "FyneSSH generated key"
 	labelTerminal         = "Terminal:"
 	titleKeysSub          = "Generate an SSH key pair for authentication."
@@ -55,6 +56,16 @@ const (
 	errGenFailed          = "Key generation failed: %v"
 	errSaveFailed         = "Save failed: %v"
 	errClipFailed         = "Copy failed: %v"
+	errUploadFailed       = "Upload failed: %v"
+	errUploadMissing      = "Public key path, user, host, port, and password are required"
+	msgUploadSuccess      = "Public key uploaded successfully."
+	labelUploadHost       = "Upload Host:"
+	labelUploadUser       = "Upload User:"
+	labelUploadPort       = "Port:"
+	labelUploadPassword   = "Server Password:"
+	placeholderUploadHost = "server IP or hostname"
+	placeholderUploadUser = "server username"
+	placeholderUploadPort = "22"
 
 	tabLogin = "Login"
 	tabKeys  = "Keys"
@@ -150,6 +161,10 @@ type KeysUI struct {
 	pubPath     *widget.Entry
 	privDisplay *widget.Entry
 	pubDisplay  *widget.Entry
+	uploadHost  *widget.Entry
+	uploadUser  *widget.Entry
+	uploadPort  *widget.Entry
+	uploadPass  *widget.Entry
 	status      *widget.Label
 }
 
@@ -169,6 +184,19 @@ func (a *App) buildKeysTab() *fyne.Container {
 	ui.privPath.SetText(platform.PrivateKeyPath(defaultPrivateName))
 	ui.pubPath = widget.NewEntry()
 	ui.pubPath.SetText(platform.PublicKeyPath(defaultPublicName))
+
+	ui.uploadHost = widget.NewEntry()
+	ui.uploadHost.SetPlaceHolder(placeholderUploadHost)
+
+	ui.uploadUser = widget.NewEntry()
+	ui.uploadUser.SetPlaceHolder(placeholderUploadUser)
+
+	ui.uploadPort = widget.NewEntry()
+	ui.uploadPort.SetPlaceHolder(placeholderUploadPort)
+	ui.uploadPort.SetText("22")
+
+	ui.uploadPass = widget.NewPasswordEntry()
+	ui.uploadPass.SetPlaceHolder("server password")
 
 	ui.privDisplay = widget.NewMultiLineEntry()
 	ui.privDisplay.SetPlaceHolder(privateKeyPlaceholder)
@@ -237,6 +265,26 @@ func (a *App) buildKeysTab() *fyne.Container {
 		ui.status.SetText(msgCopied)
 	})
 
+	uploadBtn := widget.NewButtonWithIcon("Upload to Server", theme.UploadIcon(), func() {
+		pubPath := strings.TrimSpace(ui.pubPath.Text)
+		host := strings.TrimSpace(ui.uploadHost.Text)
+		user := strings.TrimSpace(ui.uploadUser.Text)
+		port := strings.TrimSpace(ui.uploadPort.Text)
+		password := ui.uploadPass.Text
+
+		if pubPath == "" || host == "" || user == "" || port == "" || password == "" {
+			ui.status.SetText(errUploadMissing)
+			return
+		}
+
+		if err := uploadPublicKey(pubPath, user, host, port, password); err != nil {
+			ui.status.SetText(fmt.Sprintf(errUploadFailed, err))
+			return
+		}
+
+		ui.status.SetText(msgUploadSuccess)
+	})
+
 	warning := widget.NewLabel(warningNoShare)
 	warning.TextStyle = fyne.TextStyle{Bold: true}
 
@@ -248,9 +296,15 @@ func (a *App) buildKeysTab() *fyne.Container {
 			widget.NewLabel(labelComment), ui.comment,
 			widget.NewLabel("Passphrase:"), ui.passEntry,
 		),
-		container.NewHBox(generateBtn, saveBtn, copyBtn),
+		container.NewHBox(generateBtn, saveBtn, copyBtn, uploadBtn),
 		ui.status,
 		warning,
+		container.NewGridWithColumns(2,
+			widget.NewLabel(labelUploadUser), ui.uploadUser,
+			widget.NewLabel(labelUploadHost), ui.uploadHost,
+			widget.NewLabel(labelUploadPort), ui.uploadPort,
+			widget.NewLabel(labelUploadPassword), ui.uploadPass,
+		),
 		container.NewGridWithColumns(2,
 			container.NewVBox(widget.NewLabel(labelPrivPath), ui.privPath),
 			container.NewVBox(widget.NewLabel(labelPubPath), ui.pubPath),
@@ -272,6 +326,60 @@ func (a *App) Run() {
 	// TODO: add File Manager, UFW, Port Config tabs.
 	a.window.SetContent(tabs)
 	a.window.ShowAndRun()
+}
+
+func uploadPublicKey(pubKeyPath, user, host, port, password string) error {
+	portNum, err := parsePort(port)
+	if err != nil {
+		return err
+	}
+
+	authMethods := []ssh.AuthMethod{ssh.Password(password)}
+
+	client, err := sshclient.Dial(context.Background(), user, host, portNum, authMethods)
+	if err != nil {
+		return fmt.Errorf("connect to %s@%s:%s: %w", user, host, port, err)
+	}
+	defer client.Close()
+
+	session, err := client.Session()
+	if err != nil {
+		return fmt.Errorf("create session: %w", err)
+	}
+	defer session.Close()
+
+	pubKeyBytes, err := os.ReadFile(pubKeyPath)
+	if err != nil {
+		return fmt.Errorf("read public key file: %w", err)
+	}
+	pubKeyContent := strings.TrimSpace(string(pubKeyBytes))
+
+	mkdirCmd := "mkdir -p ~/.ssh && chmod 700 ~/.ssh"
+	if err := session.Run(mkdirCmd); err != nil {
+		return fmt.Errorf("create .ssh directory: %w", err)
+	}
+
+	appendCmd := fmt.Sprintf("echo '%s' >> ~/.ssh/authorized_keys", strings.ReplaceAll(pubKeyContent, "'", "'\\''"))
+	if err := session.Run(appendCmd); err != nil {
+		return fmt.Errorf("append public key: %w", err)
+	}
+
+	chmodCmd := "chmod 600 ~/.ssh/authorized_keys"
+	if err := session.Run(chmodCmd); err != nil {
+		return fmt.Errorf("set authorized_keys permissions: %w", err)
+	}
+
+	return nil
+}
+
+func parsePort(s string) (int, error) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return 22, nil
+	}
+	var p int
+	_, err := fmt.Sscan(s, &p)
+	return p, err
 }
 
 func defaultPort(s string) int {
