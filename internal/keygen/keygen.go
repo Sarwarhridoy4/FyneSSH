@@ -1,6 +1,7 @@
 package keygen
 
 import (
+	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -69,8 +70,15 @@ func Generate(opts Options) (*KeyPair, error) {
 
 	privPEM := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: privDER})
 
-	pubKey, _ := privateKey.(interface{ Public() interface{} })
-	sshPub, err := ssh.NewPublicKey(pubKey.Public())
+	var sshPub ssh.PublicKey
+	switch k := privateKey.(type) {
+	case ed25519.PrivateKey:
+		sshPub, err = ssh.NewPublicKey(k.Public())
+	case *rsa.PrivateKey:
+		sshPub, err = ssh.NewPublicKey(k.Public())
+	default:
+		return nil, fmt.Errorf("unsupported private key type for public key extraction: %T", privateKey)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("marshal public key: %w", err)
 	}
