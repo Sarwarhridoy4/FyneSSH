@@ -144,7 +144,42 @@
 
 ---
 
-## 12. Review Checklist
+## 13. Codebase Structure and Documentation Standards
+
+### 13.1 Split Codebase
+- Organize the project into clearly separated packages:
+  - `internal/sshclient` — SSH session, channel management, command execution
+  - `internal/sftpclient` — SFTP file transfer operations
+  - `internal/keygen` — SSH key pair generation and management
+  - `internal/ufw` — UFW firewall rule management
+  - `internal/configparser` — SSH config file read/write/validation
+  - `internal/platform` — OS/distro detection and path resolution
+  - `pkg/ui` — Fyne screens, widgets, and views
+  - `pkg/store` — Persisted app settings and saved sessions
+- Each package must have a single responsibility and expose a clean, typed API.
+- Avoid coupling UI and backend logic; pass interfaces instead of concrete types.
+
+### 13.2 Documentation Requirements
+- Every exported package, variable, function, method, and type must have a doc comment (Go convention).
+- Doc comments start with the name being documented and explain its purpose.
+- Function comments describe behavior, parameters, return values, and errors.
+- Complex algorithms and non-trivial logic require inline comments explaining intent.
+- UI components and widgets must describe layout and user interaction.
+- Internal documented utilities that are not exported still require clear comments.
+- No undocumented public API; build must fail if documentation is missing.
+
+### 13.3 Go and Fyne Standards
+- Follow standard Go project layout; top-level `cmd/` contains the application entrypoint.
+- All code passes `go fmt`, `go vet`, and `golangci-lint` without error.
+- Use Go modules with minimal and well-justified dependencies.
+- Fyne UI code must use widgets and containers idiomatically.
+- Package names are short, lowercase, and stable.
+- Group related declarations; avoid long files (> 500 lines). Split by responsibility when necessary.
+- No hardcoded strings for user-facing text; prepare for localization.
+
+---
+
+## 14. Review Checklist
 
 Before merging or releasing:
 - [ ] `go fmt ./...` passes with no changes.
