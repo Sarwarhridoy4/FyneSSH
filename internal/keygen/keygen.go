@@ -39,25 +39,27 @@ type KeyPair struct {
 // Generate creates a new SSH key pair according to the provided options.
 // Passphrase support is currently reserved for future implementation.
 func Generate(opts Options) (*KeyPair, error) {
-	var (
-		privateKey interface{}
-		err        error
-	)
+	var privateKey interface{}
+	var err error
 
 	switch opts.Algorithm {
 	case AlgorithmEd25519:
-		privateKey, err = ed25519Generate()
+		kp, err := ed25519Generate()
+		if err != nil {
+			return nil, fmt.Errorf("generate %s key: %w", opts.Algorithm, err)
+		}
+		privateKey = kp.private
 	case AlgorithmRSA, "":
 		bits := opts.Bits
 		if bits == 0 {
 			bits = 4096
 		}
 		privateKey, err = generateRSA(bits)
+		if err != nil {
+			return nil, fmt.Errorf("generate %s key: %w", opts.Algorithm, err)
+		}
 	default:
 		return nil, fmt.Errorf("unsupported algorithm: %s", opts.Algorithm)
-	}
-	if err != nil {
-		return nil, fmt.Errorf("generate %s key: %w", opts.Algorithm, err)
 	}
 
 	privDER, err := x509.MarshalPKCS8PrivateKey(privateKey)
@@ -67,10 +69,7 @@ func Generate(opts Options) (*KeyPair, error) {
 
 	privPEM := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: privDER})
 
-	pubKey, ok := privateKey.(interface{ Public() interface{} })
-	if !ok {
-		return nil, fmt.Errorf("private key does not implement Public()")
-	}
+	pubKey, _ := privateKey.(interface{ Public() interface{} })
 	sshPub, err := ssh.NewPublicKey(pubKey.Public())
 	if err != nil {
 		return nil, fmt.Errorf("marshal public key: %w", err)

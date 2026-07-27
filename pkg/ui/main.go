@@ -114,12 +114,12 @@ func (a *App) buildLoginForm() *fyne.Container {
 
 	return container.NewVBox(
 		widget.NewLabel(titleLogin),
-		container.NewHBox(
+		container.NewGridWithColumns(2,
 			widget.NewLabel(labelUser), userEntry,
 			widget.NewLabel(labelHost), hostEntry,
 			widget.NewLabel(labelPort), portEntry,
-			connectBtn,
 		),
+		connectBtn,
 		status,
 		widget.NewLabel(labelTerminal),
 		terminal,
