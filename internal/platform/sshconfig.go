@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -328,4 +329,13 @@ func writeFile(path string, data []byte, perm os.FileMode) error {
 		return err
 	}
 	return os.WriteFile(path, data, perm)
+}
+
+// OpenTerminal opens the system terminal and runs the given command.
+func OpenTerminal(command string) error {
+	cmd := exec.Command("sh", "-c", fmt.Sprintf("%s <<< \"%s\"", GetDefaultShell(), strings.ReplaceAll(command, "\"", "\\\"")))
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Start()
 }
