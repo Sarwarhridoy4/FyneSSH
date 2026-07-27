@@ -44,6 +44,20 @@ go build -o fyne-ssh ./cmd/fyne-ssh
 
 See `instruction.md` for detailed SSH concepts and server setup instructions.
 
+## Run
+
+Build the binary:
+
+```bash
+go build -o fyne-ssh ./cmd/fyne-ssh
+```
+
+Run the app:
+
+```bash
+./fyne-ssh
+```
+
 ## License
 
 See [LICENSE](./LICENSE)
