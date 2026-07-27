@@ -324,7 +324,8 @@ func (a *App) Run() {
 		container.NewTabItem(tabKeys, a.buildKeysTab()),
 	)
 	// TODO: add File Manager, UFW, Port Config tabs.
-	a.window.SetContent(tabs)
+	scroll := container.NewScroll(tabs)
+	a.window.SetContent(scroll)
 	a.window.ShowAndRun()
 }
 
@@ -352,21 +353,14 @@ func uploadPublicKey(pubKeyPath, user, host, port, password string) error {
 	if err != nil {
 		return fmt.Errorf("read public key file: %w", err)
 	}
+
 	pubKeyContent := strings.TrimSpace(string(pubKeyBytes))
+	escapedKey := strings.ReplaceAll(pubKeyContent, "'", "'\\''")
 
-	mkdirCmd := "mkdir -p ~/.ssh && chmod 700 ~/.ssh"
-	if err := session.Run(mkdirCmd); err != nil {
-		return fmt.Errorf("create .ssh directory: %w", err)
-	}
+	shellCmd := fmt.Sprintf("mkdir -p ~/.ssh && chmod 700 ~/.ssh && echo '%s' >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys", escapedKey)
 
-	appendCmd := fmt.Sprintf("echo '%s' >> ~/.ssh/authorized_keys", strings.ReplaceAll(pubKeyContent, "'", "'\\''"))
-	if err := session.Run(appendCmd); err != nil {
+	if err := session.Run(shellCmd); err != nil {
 		return fmt.Errorf("append public key: %w", err)
-	}
-
-	chmodCmd := "chmod 600 ~/.ssh/authorized_keys"
-	if err := session.Run(chmodCmd); err != nil {
-		return fmt.Errorf("set authorized_keys permissions: %w", err)
 	}
 
 	return nil
