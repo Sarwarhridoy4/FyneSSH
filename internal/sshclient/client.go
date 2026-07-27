@@ -17,16 +17,20 @@ type Client struct {
 
 // Dial connects to a remote SSH server using the provided configuration.
 func Dial(ctx context.Context, user, host string, port int, auth []ssh.AuthMethod) (*Client, error) {
+	return DialWithHostKey(ctx, user, host, port, auth, ssh.InsecureIgnoreHostKey())
+}
+
+// DialWithHostKey connects to a remote SSH server using the provided configuration and host key callback.
+func DialWithHostKey(ctx context.Context, user, host string, port int, auth []ssh.AuthMethod, hostKeyCallback ssh.HostKeyCallback) (*Client, error) {
 	addr := fmt.Sprintf("%s:%d", host, port)
 
 	cfg := &ssh.ClientConfig{
 		User:            user,
 		Auth:            auth,
 		Timeout:         10 * time.Second,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(), // TODO: allow known_hosts
+		HostKeyCallback: hostKeyCallback,
 	}
 
-	// TODO: use a net.Dialer with context cancellation instead of DialTimeout.
 	conn, err := ssh.Dial("tcp", addr, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("dial %s: %w", addr, err)
