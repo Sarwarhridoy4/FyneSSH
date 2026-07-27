@@ -12,19 +12,23 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
+	"golang.org/x/crypto/ssh"
+
 	"github.com/Sarwarhridoy4/FyneSSH/internal/keygen"
+	"github.com/Sarwarhridoy4/FyneSSH/internal/platform"
 	"github.com/Sarwarhridoy4/FyneSSH/internal/sshclient"
 )
 
 const (
-	titleLogin         = "Remote Login"
-	labelUser          = "User:"
-	labelHost          = "Host:"
-	labelPort          = "Port:"
-	placeholderHost    = "host or IP"
-	placeholderPort    = "port"
-	placeholderUser    = "username"
-	statusNotConnected = "Not connected"
+	titleLogin          = "Remote Login"
+	labelUser           = "User:"
+	labelHost           = "Host:"
+	labelPort           = "Port:"
+	placeholderHost     = "host or IP"
+	placeholderPort     = "port"
+	placeholderUser     = "username"
+	placeholderPassword = "password"
+	statusNotConnected  = "Not connected"
 
 	titleKeys             = "SSH Keys"
 	labelAlgorithm        = "Algorithm:"
@@ -32,6 +36,7 @@ const (
 	labelPrivPath         = "Private key path:"
 	labelPubPath          = "Public key path:"
 	placeholderComment    = "optional key comment"
+	placeholderPassphrase = "optional passphrase"
 	defaultPrivateName    = "id_ed25519"
 	defaultPublicName     = "id_ed25519.pub"
 	defaultComment        = "FyneSSH generated key"
@@ -80,6 +85,9 @@ func (a *App) buildLoginForm() *fyne.Container {
 	userEntry := widget.NewEntry()
 	userEntry.SetPlaceHolder(placeholderUser)
 
+	passEntry := widget.NewPasswordEntry()
+	passEntry.SetPlaceHolder(placeholderPassword)
+
 	status := widget.NewLabel(statusNotConnected)
 
 	terminal := widget.NewMultiLineEntry()
@@ -89,13 +97,19 @@ func (a *App) buildLoginForm() *fyne.Container {
 		host := strings.TrimSpace(hostEntry.Text)
 		port := strings.TrimSpace(portEntry.Text)
 		user := strings.TrimSpace(userEntry.Text)
+		password := passEntry.Text
 
 		if host == "" || port == "" || user == "" {
 			status.SetText(msgMissingFields)
 			return
 		}
 
-		client, err := sshclient.Dial(context.Background(), user, host, defaultPort(port), nil)
+		var authMethods []ssh.AuthMethod
+		if password != "" {
+			authMethods = append(authMethods, ssh.Password(password))
+		}
+
+		client, err := sshclient.Dial(context.Background(), user, host, defaultPort(port), authMethods)
 		if err != nil {
 			status.SetText(err.Error())
 			return
@@ -118,6 +132,7 @@ func (a *App) buildLoginForm() *fyne.Container {
 			widget.NewLabel(labelUser), userEntry,
 			widget.NewLabel(labelHost), hostEntry,
 			widget.NewLabel(labelPort), portEntry,
+			widget.NewLabel("Password:"), passEntry,
 		),
 		connectBtn,
 		status,
@@ -130,6 +145,7 @@ func (a *App) buildLoginForm() *fyne.Container {
 type KeysUI struct {
 	algoSelect  *widget.Select
 	comment     *widget.Entry
+	passEntry   *widget.Entry
 	privPath    *widget.Entry
 	pubPath     *widget.Entry
 	privDisplay *widget.Entry
@@ -146,25 +162,27 @@ func (a *App) buildKeysTab() *fyne.Container {
 	ui.comment = widget.NewEntry()
 	ui.comment.SetPlaceHolder(placeholderComment)
 
+	ui.passEntry = widget.NewEntry()
+	ui.passEntry.SetPlaceHolder(placeholderPassphrase)
+
 	ui.privPath = widget.NewEntry()
-	ui.privPath.SetText(defaultPrivateName)
+	ui.privPath.SetText(platform.PrivateKeyPath(defaultPrivateName))
 	ui.pubPath = widget.NewEntry()
-	ui.pubPath.SetText(defaultPublicName)
+	ui.pubPath.SetText(platform.PublicKeyPath(defaultPublicName))
 
 	ui.privDisplay = widget.NewMultiLineEntry()
-	ui.privDisplay.Disable()
 	ui.privDisplay.SetPlaceHolder(privateKeyPlaceholder)
 
 	ui.pubDisplay = widget.NewMultiLineEntry()
-	ui.pubDisplay.Disable()
 	ui.pubDisplay.SetPlaceHolder(publicKeyPlaceholder)
 
 	ui.status = widget.NewLabel("")
 
 	generateBtn := widget.NewButtonWithIcon("Generate", theme.ContentAddIcon(), func() {
 		opts := keygen.Options{
-			Algorithm: keygen.Algorithm(ui.algoSelect.Selected),
-			Comment:   strings.TrimSpace(ui.comment.Text),
+			Algorithm:  keygen.Algorithm(ui.algoSelect.Selected),
+			Comment:    strings.TrimSpace(ui.comment.Text),
+			Passphrase: strings.TrimSpace(ui.passEntry.Text),
 		}
 
 		kp, err := keygen.Generate(opts)
@@ -228,6 +246,7 @@ func (a *App) buildKeysTab() *fyne.Container {
 		container.NewGridWithColumns(2,
 			widget.NewLabel(labelAlgorithm), ui.algoSelect,
 			widget.NewLabel(labelComment), ui.comment,
+			widget.NewLabel("Passphrase:"), ui.passEntry,
 		),
 		container.NewHBox(generateBtn, saveBtn, copyBtn),
 		ui.status,

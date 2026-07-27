@@ -8,6 +8,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"golang.org/x/crypto/ssh"
@@ -118,14 +119,17 @@ func generateRSA(bits int) (*rsa.PrivateKey, error) {
 }
 
 func writeFile(path string, data []byte, perm os.FileMode) error {
-	if err := os.MkdirAll(sshKeyDir(path), 0700); err != nil {
+	dir := dirOf(path)
+	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
 	}
 	return os.WriteFile(path, data, perm)
 }
 
-func sshKeyDir(_ string) string {
-	// Placeholder: directory creation is handled by MkdirAll.
-	// Future: extract and enforce ~/.ssh base dir permissions.
-	return ""
+func dirOf(path string) string {
+	d := filepath.Dir(path)
+	if d == "." {
+		return ""
+	}
+	return d
 }
