@@ -34,3 +34,8 @@ func userHome() string {
 	home, _ := os.UserHomeDir()
 	return home
 }
+
+// IsRootUser reports whether the current effective user is root.
+func IsRootUser() bool {
+	return os.Geteuid() == 0
+}

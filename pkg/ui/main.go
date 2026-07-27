@@ -51,7 +51,6 @@ const (
 	publicKeyPlaceholder  = "Public key will appear here"
 	msgMissingFields      = "Missing fields"
 	msgGenerated          = "Key pair generated. Save to disk or copy public key."
-	msgSaved              = "Keys saved successfully."
 	msgCopied             = "Public key copied to clipboard."
 	errGenFailed          = "Key generation failed: %v"
 	errSaveFailed         = "Save failed: %v"
@@ -66,6 +65,8 @@ const (
 	placeholderUploadHost = "server IP or hostname"
 	placeholderUploadUser = "server username"
 	placeholderUploadPort = "22"
+	msgSaved              = "Keys saved successfully to %s and %s"
+	msgSaveFailed         = "Save failed: %v"
 
 	tabLogin = "Login"
 	tabKeys  = "Keys"
@@ -120,7 +121,7 @@ func (a *App) buildLoginForm() *fyne.Container {
 			authMethods = append(authMethods, ssh.Password(password))
 		}
 
-		client, err := sshclient.Dial(context.Background(), user, host, defaultPort(port), authMethods)
+		client, err := sshclient.Dial(context.Background(), user, host, parsePort(port), authMethods)
 		if err != nil {
 			status.SetText(err.Error())
 			return
@@ -247,11 +248,16 @@ func (a *App) buildKeysTab() *fyne.Container {
 		}
 
 		if err := kp.Save(privPath, pubPath); err != nil {
-			ui.status.SetText(fmt.Sprintf(errSaveFailed, err))
+			ui.status.SetText(fmt.Sprintf(msgSaveFailed, err))
 			return
 		}
 
-		ui.status.SetText(msgSaved)
+		if _, err := os.Stat(privPath); err != nil {
+			ui.status.SetText(fmt.Sprintf("Save reported success, but private key not found at %s: %v", privPath, err))
+			return
+		}
+
+		ui.status.SetText(fmt.Sprintf(msgSaved, privPath, pubPath))
 	})
 
 	copyBtn := widget.NewButtonWithIcon("Copy Public Key", theme.ContentCopyIcon(), func() {
@@ -288,7 +294,13 @@ func (a *App) buildKeysTab() *fyne.Container {
 	warning := widget.NewLabel(warningNoShare)
 	warning.TextStyle = fyne.TextStyle{Bold: true}
 
-	return container.NewVBox(
+	var rootWarning fyne.CanvasObject
+	if platform.IsRootUser() {
+		rootWarning = widget.NewLabel("Warning: running as root. Keys will be saved to /root/.ssh/")
+		rootWarning.(*widget.Label).TextStyle = fyne.TextStyle{Bold: true}
+	}
+
+	items := []fyne.CanvasObject{
 		widget.NewLabel(titleKeys),
 		widget.NewLabel(titleKeysSub),
 		container.NewGridWithColumns(2,
@@ -299,6 +311,11 @@ func (a *App) buildKeysTab() *fyne.Container {
 		container.NewHBox(generateBtn, saveBtn, copyBtn, uploadBtn),
 		ui.status,
 		warning,
+	}
+	if rootWarning != nil {
+		items = append(items, rootWarning)
+	}
+	items = append(items,
 		container.NewGridWithColumns(2,
 			widget.NewLabel(labelUploadUser), ui.uploadUser,
 			widget.NewLabel(labelUploadHost), ui.uploadHost,
@@ -315,6 +332,8 @@ func (a *App) buildKeysTab() *fyne.Container {
 		),
 		container.NewGridWithColumns(2, ui.privDisplay, ui.pubDisplay),
 	)
+
+	return container.NewVBox(items...)
 }
 
 // Run starts the application.
@@ -330,10 +349,7 @@ func (a *App) Run() {
 }
 
 func uploadPublicKey(pubKeyPath, user, host, port, password string) error {
-	portNum, err := parsePort(port)
-	if err != nil {
-		return err
-	}
+	portNum := parsePort(port)
 
 	authMethods := []ssh.AuthMethod{ssh.Password(password)}
 
@@ -366,19 +382,9 @@ func uploadPublicKey(pubKeyPath, user, host, port, password string) error {
 	return nil
 }
 
-func parsePort(s string) (int, error) {
+func parsePort(s string) int {
 	s = strings.TrimSpace(s)
 	if s == "" {
-		return 22, nil
-	}
-	var p int
-	_, err := fmt.Sscan(s, &p)
-	return p, err
-}
-
-func defaultPort(s string) int {
-	switch s {
-	case "", "22":
 		return 22
 	}
 	var p int
