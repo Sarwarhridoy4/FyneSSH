@@ -1,5 +1,7 @@
 package platform
 
+import "os"
+
 // DistroFamily represents a Linux distribution family.
 type DistroFamily int
 

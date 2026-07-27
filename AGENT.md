@@ -192,3 +192,13 @@ Before merging or releasing:
 - [ ] `sshd -t` validation step implemented before applying port changes.
 - [ ] Config alias support includes IdentitiesOnly and keepalive parameters.
 - [ ] README and AGENT.md are up to date.
+
+---
+
+## 15. Review Gate
+
+- Every feature branch must pass the review checklist in Section 14 before merge.
+- At least one approved review is required for non-trivial changes.
+- Security-sensitive changes (key handling, SSH service commands, firewall rules) require explicit reviewer sign-off.
+- No direct push to main; merge only via pull request after CI/review passes.
+
