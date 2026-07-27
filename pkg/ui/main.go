@@ -3,7 +3,6 @@ package ui
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"strings"
 
@@ -70,6 +69,7 @@ const (
 	msgConfigUpdated      = "SSH config updated for host %s"
 	msgKnownHostsAdded    = "Host %s added to known_hosts"
 	msgHostKeyMismatch    = "Host key mismatch for %s"
+	msgTerminalOpened     = "Opening terminal with ssh %s..."
 
 	labelKeyName        = "Key name:"
 	placeholderKeyName  = "e.g. id_ed25519_personal"
@@ -84,6 +84,7 @@ const (
 	btnSaveConfig      = "Save Key & Update Config"
 	btnAddKnownHost    = "Add to known_hosts"
 	btnUploadAndConfig = "Upload Key & Add Config"
+	btnOpenTerminal    = "Open Terminal"
 
 	titleInstructions    = "Instructions"
 	tabLogin             = "Login"
@@ -121,45 +122,27 @@ func (a *App) buildLoginForm() *fyne.Container {
 
 	status := widget.NewLabel(statusNotConnected)
 
-	terminal := widget.NewMultiLineEntry()
-	terminal.Disable()
-
-	connectBtn := widget.NewButtonWithIcon("Connect", theme.LoginIcon(), func() {
+	connectBtn := widget.NewButtonWithIcon("Open Terminal", theme.ComputerIcon(), func() {
 		host := strings.TrimSpace(hostEntry.Text)
 		port := strings.TrimSpace(portEntry.Text)
 		user := strings.TrimSpace(userEntry.Text)
-		password := passEntry.Text
 
 		if host == "" || port == "" || user == "" {
 			status.SetText(msgMissingFields)
 			return
 		}
 
-		var authMethods []ssh.AuthMethod
-		if password != "" {
-			authMethods = append(authMethods, ssh.Password(password))
+		target := fmt.Sprintf("%s@%s", user, host)
+		if port != "22" {
+			target = fmt.Sprintf("%s@%s -p %s", user, host, port)
 		}
 
-		hostKeyCallback, err := platform.HostKeyCallback()
-		if err != nil {
-			status.SetText(fmt.Sprintf("Host key callback error: %v", err))
+		if err := platform.OpenTerminal(fmt.Sprintf("ssh %s", target)); err != nil {
+			status.SetText(fmt.Sprintf("Failed to open terminal: %v", err))
 			return
 		}
 
-		client, err := sshclient.DialWithHostKey(context.Background(), user, host, parsePort(port), authMethods, hostKeyCallback)
-		if err != nil {
-			status.SetText(err.Error())
-			return
-		}
-		defer client.Close()
-
-		status.SetText(fmt.Sprintf("Connected to %s@%s", user, host))
-
-		terminal.SetText(func() string {
-			var b strings.Builder
-			_, _ = io.WriteString(&b, fmt.Sprintf("Connected to %s@%s\n", user, host))
-			return b.String()
-		}())
+		status.SetText(fmt.Sprintf(msgTerminalOpened, target))
 	})
 
 	return container.NewVBox(
@@ -172,8 +155,6 @@ func (a *App) buildLoginForm() *fyne.Container {
 		),
 		connectBtn,
 		status,
-		widget.NewLabel(labelTerminal),
-		terminal,
 	)
 }
 
@@ -429,6 +410,21 @@ func (a *App) buildKeysTab() *fyne.Container {
 		ui.status.SetText(msgUploadSuccess)
 	})
 
+	openTerminalBtn := widget.NewButtonWithIcon(btnOpenTerminal, theme.ComputerIcon(), func() {
+		hostAlias := strings.TrimSpace(ui.cfgHostAlias.Text)
+		if hostAlias == "" {
+			ui.status.SetText("Host alias is required")
+			return
+		}
+
+		if err := platform.OpenTerminal(fmt.Sprintf("ssh %s", hostAlias)); err != nil {
+			ui.status.SetText(fmt.Sprintf("Failed to open terminal: %v", err))
+			return
+		}
+
+		ui.status.SetText(fmt.Sprintf(msgTerminalOpened, hostAlias))
+	})
+
 	copyBtn := widget.NewButtonWithIcon("Copy Public Key", theme.ContentCopyIcon(), func() {
 		pub := strings.TrimSpace(ui.pubDisplay.Text)
 		if pub == "" {
@@ -485,7 +481,7 @@ func (a *App) buildKeysTab() *fyne.Container {
 			widget.NewLabel(labelUploadPort), ui.uploadPort,
 			widget.NewLabel(labelUploadPassword), ui.uploadPass,
 		),
-		container.NewHBox(uploadBtn, addKnownHostBtn),
+		container.NewHBox(uploadBtn, addKnownHostBtn, openTerminalBtn),
 		widget.NewLabel("SSH Config Entry:"),
 		container.NewGridWithColumns(2,
 			widget.NewLabel(labelCfgHostAlias), ui.cfgHostAlias,
@@ -539,9 +535,9 @@ LOGIN TAB
 - Enter the remote host (hostname or IP address)
 - Enter the port (default: 22)
 - Enter your username
-- Enter your password (optional if using key-based auth)
-- Click "Connect" to establish an SSH connection
-- The terminal area will show connection status
+- Click "Open Terminal" to launch your system terminal with ssh
+  * Uses: ssh user@host -p port
+  * Your system's default terminal emulator will be used
 
 SSH KEYS TAB
 
@@ -572,6 +568,13 @@ Save Key & Update Config:
   * ServerAliveInterval: Keep-alive interval in seconds
   * ServerAliveCountMax: Maximum keep-alive count
 - If the Host alias already exists in config, it will be updated
+
+Open Terminal:
+- Fill in the SSH Config Entry fields (at least Host alias, HostName, User)
+- Click "Open Terminal" to launch your system terminal with ssh
+  * Uses: ssh <host_alias>
+  * Reads from ~/.ssh/config for all settings
+  * Your system's default terminal emulator will be used
 
 Example SSH config entry:
 Host github
