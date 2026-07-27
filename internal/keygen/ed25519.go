@@ -13,7 +13,7 @@ type keypair struct {
 	public  ed25519.PublicKey
 }
 
-func ed25519Generate() (interface{}, error) {
+func ed25519Generate() (*keypair, error) {
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		return nil, fmt.Errorf("generate ed25519 key: %w", err)

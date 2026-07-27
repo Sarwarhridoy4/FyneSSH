@@ -1,12 +1,14 @@
 package keygen
 
 import (
+	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"golang.org/x/crypto/ssh"
@@ -39,25 +41,27 @@ type KeyPair struct {
 // Generate creates a new SSH key pair according to the provided options.
 // Passphrase support is currently reserved for future implementation.
 func Generate(opts Options) (*KeyPair, error) {
-	var (
-		privateKey interface{}
-		err        error
-	)
+	var privateKey interface{}
+	var err error
 
 	switch opts.Algorithm {
 	case AlgorithmEd25519:
-		privateKey, err = ed25519Generate()
+		kp, err := ed25519Generate()
+		if err != nil {
+			return nil, fmt.Errorf("generate %s key: %w", opts.Algorithm, err)
+		}
+		privateKey = kp.private
 	case AlgorithmRSA, "":
 		bits := opts.Bits
 		if bits == 0 {
 			bits = 4096
 		}
 		privateKey, err = generateRSA(bits)
+		if err != nil {
+			return nil, fmt.Errorf("generate %s key: %w", opts.Algorithm, err)
+		}
 	default:
 		return nil, fmt.Errorf("unsupported algorithm: %s", opts.Algorithm)
-	}
-	if err != nil {
-		return nil, fmt.Errorf("generate %s key: %w", opts.Algorithm, err)
 	}
 
 	privDER, err := x509.MarshalPKCS8PrivateKey(privateKey)
@@ -67,11 +71,15 @@ func Generate(opts Options) (*KeyPair, error) {
 
 	privPEM := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: privDER})
 
-	pubKey, ok := privateKey.(interface{ Public() interface{} })
-	if !ok {
-		return nil, fmt.Errorf("private key does not implement Public()")
+	var sshPub ssh.PublicKey
+	switch k := privateKey.(type) {
+	case ed25519.PrivateKey:
+		sshPub, err = ssh.NewPublicKey(k.Public())
+	case *rsa.PrivateKey:
+		sshPub, err = ssh.NewPublicKey(k.Public())
+	default:
+		return nil, fmt.Errorf("unsupported private key type for public key extraction: %T", privateKey)
 	}
-	sshPub, err := ssh.NewPublicKey(pubKey.Public())
 	if err != nil {
 		return nil, fmt.Errorf("marshal public key: %w", err)
 	}
@@ -111,14 +119,17 @@ func generateRSA(bits int) (*rsa.PrivateKey, error) {
 }
 
 func writeFile(path string, data []byte, perm os.FileMode) error {
-	if err := os.MkdirAll(sshKeyDir(path), 0700); err != nil {
+	dir := dirOf(path)
+	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
 	}
 	return os.WriteFile(path, data, perm)
 }
 
-func sshKeyDir(_ string) string {
-	// Placeholder: directory creation is handled by MkdirAll.
-	// Future: extract and enforce ~/.ssh base dir permissions.
-	return ""
+func dirOf(path string) string {
+	d := filepath.Dir(path)
+	if d == "." {
+		return ""
+	}
+	return d
 }
