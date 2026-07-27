@@ -2,7 +2,10 @@ module github.com/Sarwarhridoy4/FyneSSH
 
 go 1.22
 
-require fyne.io/fyne/v2 v2.4.0
+require (
+	fyne.io/fyne/v2 v2.4.0
+	golang.org/x/crypto v0.12.0
+)
 
 require (
 	fyne.io/systray v1.10.1-0.20230722100817-88df1e0ffa9a // indirect
