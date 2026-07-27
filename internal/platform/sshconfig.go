@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"golang.org/x/crypto/ssh"
@@ -333,7 +334,13 @@ func writeFile(path string, data []byte, perm os.FileMode) error {
 
 // OpenTerminal opens the system terminal and runs the given command.
 func OpenTerminal(command string) error {
-	cmd := exec.Command("sh", "-c", fmt.Sprintf("%s <<< \"%s\"", GetDefaultShell(), strings.ReplaceAll(command, "\"", "\\\"")))
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("cmd", "/c", "start", "", command)
+	default:
+		cmd = exec.Command("sh", "-c", command)
+	}
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
