@@ -135,7 +135,16 @@
 - Code comments for exported functions and types.
 - User guide embedded in-app or as markdown.
 
-## 10. Review Checklist
+## 11. Branching Strategy
+
+- Use a separate branch for each feature or fix.
+- Branch naming convention: `feature/<short-description>` or `fix/<short-description>`.
+- Do not commit directly to `main`.
+- Keep branches focused and small; merge via pull request after review.
+
+---
+
+## 12. Review Checklist
 
 Before merging or releasing:
 - [ ] `go fmt ./...` passes with no changes.
