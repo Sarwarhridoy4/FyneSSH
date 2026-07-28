@@ -55,9 +55,21 @@ go build -o fyne-ssh ./cmd/fyne-ssh
 cmd/fyne-ssh/           Application entrypoint
 internal/
   keygen/               SSH key pair generation and saving
+    ed25519.go          Ed25519-specific key generation
+    keygen.go           KeyPair type and Generate/Save helpers
   platform/             Path resolution, shell detection, SSH config, known_hosts
+    distro.go           Distro detection (Debian, Red Hat, macOS)
+    paths.go            ~/.ssh path helpers and user detection
+    shell.go            Default shell detection
+    sshconfig.go        SSH config and known_hosts read/write/update
   sshclient/            SSH dial, session, and command execution
-pkg/ui/                 Fyne UI: tabs for Login, Keys, and Instructions
+pkg/ui/                 Fyne UI
+    constants.go        Shared UI strings and messages
+    main.go             App struct, NewApp, Run, dark mode
+    login.go            Login tab
+    keys.go             Keys tab, KeysUI, setEnabled
+    instructions.go     Instructions tab
+    helpers.go          uploadPublicKey, addToKnownHostsUI, parsePort
 ```
 
 ## Documentation
