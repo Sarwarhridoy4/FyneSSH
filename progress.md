@@ -58,7 +58,7 @@
 | `golangci-lint` | **Not Checked** | Not run. |
 | Unit tests | **Not Started** | Zero test files in project. |
 | No global mutable state | **Mostly** | No globals found. |
-| Doc comments | **Partial** | Some packages/functions lack doc comments. |
+| Doc comments | **Done** | All exported types, functions, methods, and variables now have Go doc comments. |
 | File size < 500 lines | **Partial** | `pkg/ui/main.go` is ~780 lines. |
 
 ---

@@ -21,6 +21,7 @@ func ed25519Generate() (*keypair, error) {
 	return &keypair{private: priv, public: pub}, nil
 }
 
+// Public returns the public key material for the generated ed25519 key pair.
 func (k *keypair) Public() interface{} {
 	return k.public
 }

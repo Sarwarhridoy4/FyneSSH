@@ -15,6 +15,7 @@ const (
 	DistroMacOS
 )
 
+// DetectDistro detects the current Linux distribution family or macOS.
 func DetectDistro() DistroFamily {
 	if runtime.GOOS == "darwin" {
 		return DistroMacOS

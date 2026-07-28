@@ -5,6 +5,7 @@ import (
 	"runtime"
 )
 
+// GetDefaultShell returns the user's default shell, or a sensible fallback.
 func GetDefaultShell() string {
 	if shell := os.Getenv("SHELL"); shell != "" {
 		return shell
