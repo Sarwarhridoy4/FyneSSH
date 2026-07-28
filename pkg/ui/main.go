@@ -20,15 +20,15 @@ import (
 )
 
 const (
-	titleLogin             = "Remote Login"
-	labelUser              = "User:"
-	labelHost              = "Host:"
-	labelPort              = "Port:"
-	placeholderHost        = "host or IP"
-	placeholderPort        = "port"
-	placeholderUser        = "username"
-	placeholderPassword    = "password"
-	statusNotConnected     = "Not connected"
+	titleLogin          = "Remote Login"
+	labelUser           = "User:"
+	labelHost           = "Host:"
+	labelPort           = "Port:"
+	placeholderHost     = "host or IP"
+	placeholderPort     = "port"
+	placeholderUser     = "username"
+	placeholderPassword = "password"
+	statusNotConnected  = "Not connected"
 
 	titleKeys             = "SSH Keys"
 	labelAlgorithm        = "Algorithm:"
@@ -71,25 +71,25 @@ const (
 	msgHostKeyMismatch    = "Host key mismatch for %s"
 	msgTerminalOpened     = "Opening terminal with ssh %s..."
 
-	labelKeyName        = "Key name:"
-	placeholderKeyName  = "e.g. id_ed25519_personal"
-	labelCfgHostAlias   = "Host alias:"
-	labelCfgHostName    = "HostName:"
-	labelCfgUser        = "User:"
-	labelCfgPort        = "Port:"
-	labelCfgAddKeysToAgent   = "AddKeysToAgent:"
-	labelCfgIdentitiesOnly   = "IdentitiesOnly:"
-	labelCfgAliveInterval    = "ServerAliveInterval:"
-	labelCfgAliveCountMax    = "ServerAliveCountMax:"
-	btnSaveConfig      = "Save Key & Update Config"
-	btnAddKnownHost    = "Add to known_hosts"
-	btnUploadAndConfig = "Upload Key & Add Config"
-	btnOpenTerminal    = "Open Terminal"
+	labelKeyName           = "Key name:"
+	placeholderKeyName     = "e.g. id_ed25519_personal"
+	labelCfgHostAlias      = "Host alias:"
+	labelCfgHostName       = "HostName:"
+	labelCfgUser           = "User:"
+	labelCfgPort           = "Port:"
+	labelCfgAddKeysToAgent = "AddKeysToAgent:"
+	labelCfgIdentitiesOnly = "IdentitiesOnly:"
+	labelCfgAliveInterval  = "ServerAliveInterval:"
+	labelCfgAliveCountMax  = "ServerAliveCountMax:"
+	btnSaveConfig          = "Save Key & Update Config"
+	btnAddKnownHost        = "Add to known_hosts"
+	btnUploadAndConfig     = "Upload Key & Add Config"
+	btnOpenTerminal        = "Open Terminal"
 
-	titleInstructions    = "Instructions"
-	tabLogin             = "Login"
-	tabKeys              = "Keys"
-	tabInstructions      = "Instructions"
+	titleInstructions = "Instructions"
+	tabLogin          = "Login"
+	tabKeys           = "Keys"
+	tabInstructions   = "Instructions"
 )
 
 // App holds references to the main window and backend services.
@@ -160,27 +160,27 @@ func (a *App) buildLoginForm() *fyne.Container {
 
 // KeysUI encapsulates the widgets used in the Keys tab.
 type KeysUI struct {
-	algoSelect         *widget.Select
-	comment            *widget.Entry
-	passEntry          *widget.Entry
-	keyName            *widget.Entry
-	privPath           *widget.Entry
-	pubPath            *widget.Entry
-	privDisplay        *widget.Entry
-	pubDisplay         *widget.Entry
-	uploadHost         *widget.Entry
-	uploadUser         *widget.Entry
-	uploadPort         *widget.Entry
-	uploadPass         *widget.Entry
-	cfgHostAlias       *widget.Entry
-	cfgHostName        *widget.Entry
-	cfgUser            *widget.Entry
-	cfgPort            *widget.Entry
-	cfgAddKeysToAgent  *widget.Check
-	cfgIdentitiesOnly  *widget.Check
-	cfgAliveInterval   *widget.Entry
-	cfgAliveCountMax   *widget.Entry
-	status             *widget.Label
+	algoSelect        *widget.Select
+	comment           *widget.Entry
+	passEntry         *widget.Entry
+	keyName           *widget.Entry
+	privPath          *widget.Entry
+	pubPath           *widget.Entry
+	privDisplay       *widget.Entry
+	pubDisplay        *widget.Entry
+	uploadHost        *widget.Entry
+	uploadUser        *widget.Entry
+	uploadPort        *widget.Entry
+	uploadPass        *widget.Entry
+	cfgHostAlias      *widget.Entry
+	cfgHostName       *widget.Entry
+	cfgUser           *widget.Entry
+	cfgPort           *widget.Entry
+	cfgAddKeysToAgent *widget.Check
+	cfgIdentitiesOnly *widget.Check
+	cfgAliveInterval  *widget.Entry
+	cfgAliveCountMax  *widget.Entry
+	status            *widget.Label
 }
 
 func (a *App) buildKeysTab() *fyne.Container {
@@ -347,12 +347,12 @@ func (a *App) buildKeysTab() *fyne.Container {
 		cfgPort := strings.TrimSpace(ui.cfgPort.Text)
 		if hostAlias != "" && hostName != "" && cfgUser != "" {
 			block := platform.HostBlock{
-				Patterns:           []string{hostAlias},
-				HostName:           hostName,
-				User:               cfgUser,
-				AddKeysToAgent:     ui.cfgAddKeysToAgent.Checked,
-				IdentitiesOnly:     ui.cfgIdentitiesOnly.Checked,
-				IdentityFile:       privPath,
+				Patterns:       []string{hostAlias},
+				HostName:       hostName,
+				User:           cfgUser,
+				AddKeysToAgent: ui.cfgAddKeysToAgent.Checked,
+				IdentitiesOnly: ui.cfgIdentitiesOnly.Checked,
+				IdentityFile:   privPath,
 			}
 			if cfgPort != "" && cfgPort != "0" {
 				var p int
@@ -688,7 +688,6 @@ All paths are under ~/.ssh/:
 `
 	instructions := strings.ReplaceAll(rawInstructions, "«", "`")
 	instructions = strings.ReplaceAll(instructions, "»", "`")
-	
 
 	richText := widget.NewRichTextFromMarkdown(instructions)
 	richText.Wrapping = fyne.TextWrapWord

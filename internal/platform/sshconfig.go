@@ -21,16 +21,16 @@ func KnownHostsPath() string {
 
 // HostBlock represents a single Host entry in the SSH config.
 type HostBlock struct {
-	Patterns           []string
-	HostName           string
-	User               string
-	Port               int
-	IdentityFile       string
-	AddKeysToAgent     bool
-	IdentitiesOnly     bool
+	Patterns            []string
+	HostName            string
+	User                string
+	Port                int
+	IdentityFile        string
+	AddKeysToAgent      bool
+	IdentitiesOnly      bool
 	ServerAliveInterval int
 	ServerAliveCountMax int
-	Comment            string
+	Comment             string
 }
 
 var hostHeaderRe = regexp.MustCompile(`(?i)^\s*Host\s+(.+)$`)
