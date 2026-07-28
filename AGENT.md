@@ -185,6 +185,7 @@ Before merging or releasing:
 - [ ] `go fmt ./...` passes with no changes.
 - [ ] `golangci-lint run` passes cleanly.
 - [ ] All tests pass: `go test ./...`.
+- [ ] No single file exceeds 500 lines; split by responsibility when necessary.
 - [ ] No private key or passphrase appears in logs or UI.
 - [ ] UI actions remain responsive during SSH operations.
 - [ ] File permissions enforced when writing key files.
