@@ -744,7 +744,7 @@ func addToKnownHostsUI(host string) error {
 		return fmt.Errorf("create host key callback: %w", err)
 	}
 
-	client, err := sshclient.DialWithHostKey(context.Background(), "root", host, portNum, authMethods, hostKeyCallback)
+	client, err := sshclient.DialWithHostKey(context.Background(), platform.CurrentUser(), host, portNum, authMethods, hostKeyCallback)
 	if err != nil {
 		return fmt.Errorf("connect to %s: %w", host, err)
 	}
