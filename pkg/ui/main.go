@@ -102,7 +102,7 @@ func NewApp() *App {
 	// TODO: persist app-specific metadata with app.NewWithID.
 	a := app.New()
 	w := a.NewWindow("FyneSSH")
-	w.Resize(fyne.NewSize(900, 700))
+	w.Resize(fyne.NewSize(1000, 800))
 	return &App{window: w}
 }
 
@@ -514,13 +514,12 @@ func (a *App) buildKeysTab() *fyne.Container {
 // Run starts the application.
 func (a *App) Run() {
 	tabs := container.NewAppTabs(
-		container.NewTabItem(tabLogin, a.buildLoginForm()),
-		container.NewTabItem(tabKeys, a.buildKeysTab()),
-		container.NewTabItem(tabInstructions, a.buildInstructionsTab()),
+		container.NewTabItem(tabLogin, container.NewScroll(a.buildLoginForm())),
+		container.NewTabItem(tabKeys, container.NewScroll(a.buildKeysTab())),
+		container.NewTabItem(tabInstructions, container.NewScroll(a.buildInstructionsTab())),
 	)
 	// TODO: add File Manager, UFW, Port Config tabs.
-	scroll := container.NewScroll(tabs)
-	a.window.SetContent(scroll)
+	a.window.SetContent(tabs)
 	a.window.ShowAndRun()
 }
 
