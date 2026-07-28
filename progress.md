@@ -1,6 +1,6 @@
 # FyneSSH — Implementation Progress Report
 
-**Overall completion: ~30%**
+**Overall completion: ~35%**
 
 ---
 
@@ -70,8 +70,8 @@
 | Tabs: Terminal, File Manager, Keys, UFW, Port Config | **Partial** | Only Login, Keys, and Instructions tabs exist. |
 | Icons | **Partial** | Some Fyne theme icons used. |
 | Loading indicators | **Not Started** | No progress spinners. |
-| Disable actions during ops | **Not Started** | Buttons not disabled during upload/key generation. |
-| Dark mode | **Not Started** | Uses Fyne default. |
+| Disable actions during ops | **Done** | Buttons are disabled during key generation, save, upload, and known_hosts operations via goroutines and `KeysUI.setEnabled`. |
+| Dark mode | **Done** | Dark Mode checkbox in Instructions tab toggles between light and dark themes using Fyne settings. |
 
 ---
 
@@ -140,7 +140,7 @@
 | `golangci-lint run` passes | ❌ Not run |
 | All tests pass | ❌ No tests |
 | No private key/passphrase in logs | ✅ (passphrase not implemented yet) |
-| UI responsive during SSH ops | ❌ Operations block; terminal is external |
+| UI responsive during SSH ops | ✅ Done | Long-running operations run in goroutines; buttons are disabled during ops to prevent duplicate actions. |
 | File permissions enforced | ✅ 0600/0644 |
 | UFW/SSH service commands with confirmation | ❌ Not implemented |
 | `sshd -t` validation | ❌ Not implemented |
@@ -151,7 +151,7 @@
 
 ## Summary
 
-**Completed (~30%):**
+**Completed (~35%):**
 - Project scaffolding, Fyne UI shell, tab structure
 - SSH key generation (Ed25519/RSA), save to `~/.ssh/`
 - SSH config read/write/update with all requested fields
@@ -162,6 +162,9 @@
 - Cross-platform path support (Linux, macOS, Windows)
 - Distro detection (Debian, Red Hat, macOS)
 - Updated README and progress tracking
+- Dark mode support via Instructions tab checkbox
+- Button disabling during long-running operations
+- UI remains responsive during SSH operations via goroutines
 
 **Not Started (~70%):**
 - In-app terminal / command execution

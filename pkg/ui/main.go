@@ -95,6 +95,7 @@ const (
 // App holds references to the main window and backend services.
 type App struct {
 	window fyne.Window
+	app    fyne.App
 }
 
 // NewApp builds the main FyneSSH window.
@@ -103,8 +104,18 @@ func NewApp() *App {
 	a := app.New()
 	w := a.NewWindow("FyneSSH")
 	w.Resize(fyne.NewSize(1000, 800))
-	return &App{window: w}
+	return &App{window: w, app: a}
 }
+
+func (a *App) setDarkMode(enabled bool) {
+	if enabled {
+		a.app.Settings().SetTheme(theme.DarkTheme())
+	} else {
+		a.app.Settings().SetTheme(theme.LightTheme())
+	}
+}
+
+
 
 func (a *App) buildLoginForm() *fyne.Container {
 	hostEntry := widget.NewEntry()
@@ -181,6 +192,35 @@ type KeysUI struct {
 	cfgAliveInterval  *widget.Entry
 	cfgAliveCountMax  *widget.Entry
 	status            *widget.Label
+
+	generateBtn     *widget.Button
+	saveBtn         *widget.Button
+	saveConfigBtn   *widget.Button
+	copyBtn         *widget.Button
+	uploadBtn       *widget.Button
+	openTerminalBtn *widget.Button
+	addKnownHostBtn *widget.Button
+}
+
+func (ui *KeysUI) setEnabled(enabled bool) {
+	buttons := []*widget.Button{
+		ui.generateBtn,
+		ui.saveBtn,
+		ui.saveConfigBtn,
+		ui.copyBtn,
+		ui.uploadBtn,
+		ui.openTerminalBtn,
+		ui.addKnownHostBtn,
+	}
+	for _, btn := range buttons {
+		if btn != nil {
+			if enabled {
+				btn.Enable()
+			} else {
+				btn.Disable()
+			}
+		}
+	}
 }
 
 func (a *App) buildKeysTab() *fyne.Container {
@@ -262,168 +302,208 @@ func (a *App) buildKeysTab() *fyne.Container {
 	ui.status = widget.NewLabel("")
 
 	generateBtn := widget.NewButtonWithIcon("Generate", theme.ContentAddIcon(), func() {
-		opts := keygen.Options{
-			Algorithm:  keygen.Algorithm(ui.algoSelect.Selected),
-			Comment:    strings.TrimSpace(ui.comment.Text),
-			Passphrase: strings.TrimSpace(ui.passEntry.Text),
-		}
-
-		kp, err := keygen.Generate(opts)
-		if err != nil {
-			ui.status.SetText(fmt.Sprintf(errGenFailed, err))
-			return
-		}
-
-		ui.privDisplay.SetText(string(kp.PrivateKeyPEM))
-		ui.pubDisplay.SetText(strings.TrimSpace(kp.PublicKeySSH))
-		ui.status.SetText(msgGenerated)
-	})
-
-	saveBtn := widget.NewButtonWithIcon("Save", theme.DocumentSaveIcon(), func() {
-		priv := strings.TrimSpace(ui.privDisplay.Text)
-		pub := strings.TrimSpace(ui.pubDisplay.Text)
-		if priv == "" || pub == "" {
-			ui.status.SetText(errGenFirst)
-			return
-		}
-
-		privPath := ui.privPath.Text
-		pubPath := ui.pubPath.Text
-		if privPath == "" || pubPath == "" {
-			ui.status.SetText(msgMissingFields)
-			return
-		}
-
-		kp := &keygen.KeyPair{
-			PrivateKeyPEM: []byte(priv),
-			PublicKeySSH:  pub + "\n",
-			Algorithm:     keygen.Algorithm(ui.algoSelect.Selected),
-			Comment:       strings.TrimSpace(ui.comment.Text),
-		}
-
-		if err := kp.Save(privPath, pubPath); err != nil {
-			ui.status.SetText(fmt.Sprintf(msgSaveFailed, err))
-			return
-		}
-
-		if _, err := os.Stat(privPath); err != nil {
-			ui.status.SetText(fmt.Sprintf("Save reported success, but private key not found at %s: %v", privPath, err))
-			return
-		}
-
-		ui.status.SetText(fmt.Sprintf(msgSaved, privPath, pubPath))
-	})
-
-	saveConfigBtn := widget.NewButtonWithIcon(btnSaveConfig, theme.DocumentSaveIcon(), func() {
-		priv := strings.TrimSpace(ui.privDisplay.Text)
-		pub := strings.TrimSpace(ui.pubDisplay.Text)
-		if priv == "" || pub == "" {
-			ui.status.SetText(errGenFirst)
-			return
-		}
-
-		privPath := ui.privPath.Text
-		pubPath := ui.pubPath.Text
-		if privPath == "" || pubPath == "" {
-			ui.status.SetText(msgMissingFields)
-			return
-		}
-
-		kp := &keygen.KeyPair{
-			PrivateKeyPEM: []byte(priv),
-			PublicKeySSH:  pub + "\n",
-			Algorithm:     keygen.Algorithm(ui.algoSelect.Selected),
-			Comment:       strings.TrimSpace(ui.comment.Text),
-		}
-
-		if err := kp.Save(privPath, pubPath); err != nil {
-			ui.status.SetText(fmt.Sprintf(msgSaveFailed, err))
-			return
-		}
-
-		hostAlias := strings.TrimSpace(ui.cfgHostAlias.Text)
-		hostName := strings.TrimSpace(ui.cfgHostName.Text)
-		cfgUser := strings.TrimSpace(ui.cfgUser.Text)
-		cfgPort := strings.TrimSpace(ui.cfgPort.Text)
-		if hostAlias != "" && hostName != "" && cfgUser != "" {
-			block := platform.HostBlock{
-				Patterns:       []string{hostAlias},
-				HostName:       hostName,
-				User:           cfgUser,
-				AddKeysToAgent: ui.cfgAddKeysToAgent.Checked,
-				IdentitiesOnly: ui.cfgIdentitiesOnly.Checked,
-				IdentityFile:   privPath,
+		ui.setEnabled(false)
+		go func() {
+			opts := keygen.Options{
+				Algorithm:  keygen.Algorithm(ui.algoSelect.Selected),
+				Comment:    strings.TrimSpace(ui.comment.Text),
+				Passphrase: strings.TrimSpace(ui.passEntry.Text),
 			}
-			if cfgPort != "" && cfgPort != "0" {
-				var p int
-				if _, err := fmt.Sscan(cfgPort, &p); err == nil {
-					block.Port = p
-				}
-			}
-			aliveInterval := strings.TrimSpace(ui.cfgAliveInterval.Text)
-			if aliveInterval != "" {
-				var v int
-				if _, err := fmt.Sscan(aliveInterval, &v); err == nil {
-					block.ServerAliveInterval = v
-				}
-			}
-			aliveCountMax := strings.TrimSpace(ui.cfgAliveCountMax.Text)
-			if aliveCountMax != "" {
-				var v int
-				if _, err := fmt.Sscan(aliveCountMax, &v); err == nil {
-					block.ServerAliveCountMax = v
-				}
-			}
-			if err := platform.UpdateOrAddHost(platform.ConfigPath(), block); err != nil {
-				ui.status.SetText(fmt.Sprintf("Key saved, but config update failed: %v", err))
+
+			kp, err := keygen.Generate(opts)
+			if err != nil {
+				ui.status.SetText(fmt.Sprintf(errGenFailed, err))
+				ui.setEnabled(true)
 				return
 			}
-			ui.status.SetText(fmt.Sprintf("Key saved and SSH config updated for %s", hostAlias))
-			return
-		}
 
-		ui.status.SetText(fmt.Sprintf(msgSaved, privPath, pubPath))
+			ui.privDisplay.SetText(string(kp.PrivateKeyPEM))
+			ui.pubDisplay.SetText(strings.TrimSpace(kp.PublicKeySSH))
+			ui.status.SetText(msgGenerated)
+			ui.setEnabled(true)
+		}()
 	})
+	ui.generateBtn = generateBtn
+
+	saveBtn := widget.NewButtonWithIcon("Save", theme.DocumentSaveIcon(), func() {
+		ui.setEnabled(false)
+		go func() {
+			priv := strings.TrimSpace(ui.privDisplay.Text)
+			pub := strings.TrimSpace(ui.pubDisplay.Text)
+			if priv == "" || pub == "" {
+				ui.status.SetText(errGenFirst)
+				ui.setEnabled(true)
+				return
+			}
+
+			privPath := ui.privPath.Text
+			pubPath := ui.pubPath.Text
+			if privPath == "" || pubPath == "" {
+				ui.status.SetText(msgMissingFields)
+				ui.setEnabled(true)
+				return
+			}
+
+			kp := &keygen.KeyPair{
+				PrivateKeyPEM: []byte(priv),
+				PublicKeySSH:  pub + "\n",
+				Algorithm:     keygen.Algorithm(ui.algoSelect.Selected),
+				Comment:       strings.TrimSpace(ui.comment.Text),
+			}
+
+			if err := kp.Save(privPath, pubPath); err != nil {
+				ui.status.SetText(fmt.Sprintf(msgSaveFailed, err))
+				ui.setEnabled(true)
+				return
+			}
+
+			if _, err := os.Stat(privPath); err != nil {
+				ui.status.SetText(fmt.Sprintf("Save reported success, but private key not found at %s: %v", privPath, err))
+				ui.setEnabled(true)
+				return
+			}
+
+			ui.status.SetText(fmt.Sprintf(msgSaved, privPath, pubPath))
+			ui.setEnabled(true)
+		}()
+	})
+	ui.saveBtn = saveBtn
+
+	saveConfigBtn := widget.NewButtonWithIcon(btnSaveConfig, theme.DocumentSaveIcon(), func() {
+		ui.setEnabled(false)
+		go func() {
+			priv := strings.TrimSpace(ui.privDisplay.Text)
+			pub := strings.TrimSpace(ui.pubDisplay.Text)
+			if priv == "" || pub == "" {
+				ui.status.SetText(errGenFirst)
+				ui.setEnabled(true)
+				return
+			}
+
+			privPath := ui.privPath.Text
+			pubPath := ui.pubPath.Text
+			if privPath == "" || pubPath == "" {
+				ui.status.SetText(msgMissingFields)
+				ui.setEnabled(true)
+				return
+			}
+
+			kp := &keygen.KeyPair{
+				PrivateKeyPEM: []byte(priv),
+				PublicKeySSH:  pub + "\n",
+				Algorithm:     keygen.Algorithm(ui.algoSelect.Selected),
+				Comment:       strings.TrimSpace(ui.comment.Text),
+			}
+
+			if err := kp.Save(privPath, pubPath); err != nil {
+				ui.status.SetText(fmt.Sprintf(msgSaveFailed, err))
+				ui.setEnabled(true)
+				return
+			}
+
+			hostAlias := strings.TrimSpace(ui.cfgHostAlias.Text)
+			hostName := strings.TrimSpace(ui.cfgHostName.Text)
+			cfgUser := strings.TrimSpace(ui.cfgUser.Text)
+			cfgPort := strings.TrimSpace(ui.cfgPort.Text)
+			if hostAlias != "" && hostName != "" && cfgUser != "" {
+				block := platform.HostBlock{
+					Patterns:       []string{hostAlias},
+					HostName:       hostName,
+					User:           cfgUser,
+					AddKeysToAgent: ui.cfgAddKeysToAgent.Checked,
+					IdentitiesOnly: ui.cfgIdentitiesOnly.Checked,
+					IdentityFile:   privPath,
+				}
+				if cfgPort != "" && cfgPort != "0" {
+					var p int
+					if _, err := fmt.Sscan(cfgPort, &p); err == nil {
+						block.Port = p
+					}
+				}
+				aliveInterval := strings.TrimSpace(ui.cfgAliveInterval.Text)
+				if aliveInterval != "" {
+					var v int
+					if _, err := fmt.Sscan(aliveInterval, &v); err == nil {
+						block.ServerAliveInterval = v
+					}
+				}
+				aliveCountMax := strings.TrimSpace(ui.cfgAliveCountMax.Text)
+				if aliveCountMax != "" {
+					var v int
+					if _, err := fmt.Sscan(aliveCountMax, &v); err == nil {
+						block.ServerAliveCountMax = v
+					}
+				}
+				if err := platform.UpdateOrAddHost(platform.ConfigPath(), block); err != nil {
+					ui.status.SetText(fmt.Sprintf("Key saved, but config update failed: %v", err))
+					ui.setEnabled(true)
+					return
+				}
+				ui.status.SetText(fmt.Sprintf("Key saved and SSH config updated for %s", hostAlias))
+				ui.setEnabled(true)
+				return
+			}
+
+			ui.status.SetText(fmt.Sprintf(msgSaved, privPath, pubPath))
+			ui.setEnabled(true)
+		}()
+	})
+	ui.saveConfigBtn = saveConfigBtn
 
 	uploadBtn := widget.NewButtonWithIcon("Upload to Server", theme.UploadIcon(), func() {
-		pubPath := strings.TrimSpace(ui.pubPath.Text)
-		host := strings.TrimSpace(ui.uploadHost.Text)
-		user := strings.TrimSpace(ui.uploadUser.Text)
-		port := strings.TrimSpace(ui.uploadPort.Text)
-		password := ui.uploadPass.Text
+		ui.setEnabled(false)
+		go func() {
+			pubPath := strings.TrimSpace(ui.pubPath.Text)
+			host := strings.TrimSpace(ui.uploadHost.Text)
+			user := strings.TrimSpace(ui.uploadUser.Text)
+			port := strings.TrimSpace(ui.uploadPort.Text)
+			password := ui.uploadPass.Text
 
-		if pubPath == "" || host == "" || user == "" || port == "" || password == "" {
-			ui.status.SetText(errUploadMissing)
-			return
-		}
+			if pubPath == "" || host == "" || user == "" || port == "" || password == "" {
+				ui.status.SetText(errUploadMissing)
+				ui.setEnabled(true)
+				return
+			}
 
-		if err := uploadPublicKey(pubPath, user, host, port, password); err != nil {
-			ui.status.SetText(fmt.Sprintf(errUploadFailed, err))
-			return
-		}
+			if err := uploadPublicKey(pubPath, user, host, port, password); err != nil {
+				ui.status.SetText(fmt.Sprintf(errUploadFailed, err))
+				ui.setEnabled(true)
+				return
+			}
 
-		if err := addToKnownHostsUI(host); err != nil {
-			ui.status.SetText(fmt.Sprintf("Uploaded, but failed to add to known_hosts: %v", err))
-			return
-		}
+			if err := addToKnownHostsUI(host); err != nil {
+				ui.status.SetText(fmt.Sprintf("Uploaded, but failed to add to known_hosts: %v", err))
+				ui.setEnabled(true)
+				return
+			}
 
-		ui.status.SetText(msgUploadSuccess)
+			ui.status.SetText(msgUploadSuccess)
+			ui.setEnabled(true)
+		}()
 	})
+	ui.uploadBtn = uploadBtn
 
 	openTerminalBtn := widget.NewButtonWithIcon(btnOpenTerminal, theme.ComputerIcon(), func() {
-		hostAlias := strings.TrimSpace(ui.cfgHostAlias.Text)
-		if hostAlias == "" {
-			ui.status.SetText("Host alias is required")
-			return
-		}
+		ui.setEnabled(false)
+		go func() {
+			hostAlias := strings.TrimSpace(ui.cfgHostAlias.Text)
+			if hostAlias == "" {
+				ui.status.SetText("Host alias is required")
+				ui.setEnabled(true)
+				return
+			}
 
-		if err := platform.OpenTerminal(fmt.Sprintf("ssh %s", hostAlias)); err != nil {
-			ui.status.SetText(fmt.Sprintf("Failed to open terminal: %v", err))
-			return
-		}
+			if err := platform.OpenTerminal(fmt.Sprintf("ssh %s", hostAlias)); err != nil {
+				ui.status.SetText(fmt.Sprintf("Failed to open terminal: %v", err))
+				ui.setEnabled(true)
+				return
+			}
 
-		ui.status.SetText(fmt.Sprintf(msgTerminalOpened, hostAlias))
+			ui.status.SetText(fmt.Sprintf(msgTerminalOpened, hostAlias))
+			ui.setEnabled(true)
+		}()
 	})
+	ui.openTerminalBtn = openTerminalBtn
 
 	copyBtn := widget.NewButtonWithIcon("Copy Public Key", theme.ContentCopyIcon(), func() {
 		pub := strings.TrimSpace(ui.pubDisplay.Text)
@@ -435,19 +515,27 @@ func (a *App) buildKeysTab() *fyne.Container {
 		a.window.Clipboard().SetContent(pub)
 		ui.status.SetText(msgCopied)
 	})
+	ui.copyBtn = copyBtn
 
 	addKnownHostBtn := widget.NewButtonWithIcon(btnAddKnownHost, theme.ComputerIcon(), func() {
-		host := strings.TrimSpace(ui.uploadHost.Text)
-		if host == "" {
-			ui.status.SetText("Host is required")
-			return
-		}
-		if err := addToKnownHostsUI(host); err != nil {
-			ui.status.SetText(fmt.Sprintf("Failed to add to known_hosts: %v", err))
-			return
-		}
-		ui.status.SetText(fmt.Sprintf(msgKnownHostsAdded, host))
+		ui.setEnabled(false)
+		go func() {
+			host := strings.TrimSpace(ui.uploadHost.Text)
+			if host == "" {
+				ui.status.SetText("Host is required")
+				ui.setEnabled(true)
+				return
+			}
+			if err := addToKnownHostsUI(host); err != nil {
+				ui.status.SetText(fmt.Sprintf("Failed to add to known_hosts: %v", err))
+				ui.setEnabled(true)
+				return
+			}
+			ui.status.SetText(fmt.Sprintf(msgKnownHostsAdded, host))
+			ui.setEnabled(true)
+		}()
 	})
+	ui.addKnownHostBtn = addKnownHostBtn
 
 	warning := widget.NewLabel(warningNoShare)
 	warning.TextStyle = fyne.TextStyle{Bold: true}
@@ -685,6 +773,13 @@ All paths are under ~/.ssh/:
 - **Host key mismatch** — Remove old entry from ~/.ssh/known_hosts
 - **Config not updating** — Check write permissions on ~/.ssh/config
 - **Terminal won't open** — Ensure a terminal emulator is installed and in PATH
+
+---
+
+## Dark Mode
+
+Use the **Dark Mode** checkbox above to switch between light and dark themes.
+
 `
 	instructions := strings.ReplaceAll(rawInstructions, "«", "`")
 	instructions = strings.ReplaceAll(instructions, "»", "`")
@@ -695,8 +790,13 @@ All paths are under ~/.ssh/:
 	scroll := container.NewScroll(richText)
 	scroll.SetMinSize(fyne.NewSize(900, 500))
 
+	darkModeCheck := widget.NewCheck("Dark Mode", func(checked bool) {
+		a.setDarkMode(checked)
+	})
+
 	return container.NewVBox(
 		widget.NewLabel(titleInstructions),
+		darkModeCheck,
 		widget.NewLabel("How to use FyneSSH:"),
 		scroll,
 	)
