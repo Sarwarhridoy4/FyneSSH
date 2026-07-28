@@ -10,7 +10,8 @@ A desktop SSH client and server management tool built with [Fyne](https://fyne.i
 - **Key Alias Support** — Use custom key filenames like `id_ed25519_personal` to avoid confusion
 - **SSH Config Management** — Create and update `~/.ssh/config` Host entries with IdentityFile, IdentitiesOnly, AddKeysToAgent, ServerAliveInterval, ServerAliveCountMax, and more
 - **known_hosts Management** — Host key verification and automatic known_hosts updates on first connection
-- **System Terminal Launch** — Open your default system terminal with `ssh user@host -p port` or `ssh <config-alias>`, reading all options from `~/.ssh/config`
+- **System Terminal Launch** — Open your default system terminal with `ssh user@host -p port` or `ssh <config-alias>`, reading all options from `~/.ssh/config` (Linux, macOS, Windows)
+- **Cross-Platform Support** — Correct `.ssh` path handling on Linux, macOS, and Windows; distro detection for Debian, Red Hat, and macOS
 - **Instructions Tab** — In-app usage guide
 
 ## Roadmap (Not Yet Implemented)

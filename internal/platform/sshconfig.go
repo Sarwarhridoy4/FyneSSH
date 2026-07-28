@@ -338,6 +338,8 @@ func OpenTerminal(command string) error {
 	switch runtime.GOOS {
 	case "windows":
 		cmd = exec.Command("cmd", "/c", "start", "", command)
+	case "darwin":
+		cmd = exec.Command("open", "-a", "Terminal", command)
 	default:
 		cmd = exec.Command("sh", "-c", command)
 	}

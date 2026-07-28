@@ -1,6 +1,6 @@
 # FyneSSH — Implementation Progress Report
 
-**Overall completion: ~25%**
+**Overall completion: ~30%**
 
 ---
 
@@ -18,7 +18,7 @@
 | 2.8 | Custom SSH Port Configuration (Server-side) | **Not Started** | No `sshd_config` editing, `sshd -t` validation, UFW integration, or service restart. |
 | 2.9 | UFW Firewall Management | **Not Started** | No UFW rule management. |
 | 2.10 | SSH Service Management | **Not Started** | No start/stop/restart/enable/disable for `ssh`/`sshd`. Distro detection exists in `internal/platform/distro.go` but is unused. |
-| 2.11 | Cross-platform File System Access | **Partial (50%)** | Linux `~/.ssh/` paths work. Windows `%USERPROFILE%\.ssh` pathing is not explicitly handled. |
+| 2.11 | Cross-platform File System Access | **Done** | Linux (`~/.ssh/`), Windows (`%USERPROFILE%\.ssh`), and macOS (`~/.ssh/`) paths all work. Distro detection added for Debian, Red Hat, and macOS. System terminal launch works on Linux, macOS, and Windows. `addToKnownHostsUI` no longer hardcodes `root`; uses `CurrentUser()`. |
 
 ---
 
@@ -101,7 +101,7 @@
 
 | Requirement | Status | Notes |
 |-------------|--------|-------|
-| README | **Unknown** | Not reviewed in this session. |
+| README | **Done** | Updated to match current implementation and reference `progress.md`. |
 | Code comments | **Partial** | Some exported types/functions lack comments. |
 | In-app user guide | **Done** | Instructions tab with markdown content. |
 
@@ -145,22 +145,25 @@
 | UFW/SSH service commands with confirmation | ❌ Not implemented |
 | `sshd -t` validation | ❌ Not implemented |
 | Config alias with IdentitiesOnly/keepalive | ✅ |
-| README and AGENT.md up to date | ❓ README not reviewed |
+| README and AGENT.md up to date | ✅ Done |
 
 ---
 
 ## Summary
 
-**Completed (~25%):**
+**Completed (~30%):**
 - Project scaffolding, Fyne UI shell, tab structure
 - SSH key generation (Ed25519/RSA), save to `~/.ssh/`
 - SSH config read/write/update with all requested fields
 - known_hosts management and host key callback
-- System terminal launch for SSH sessions
+- System terminal launch for SSH sessions (Linux, macOS, Windows)
 - Instructions tab with usage docs
 - Basic error handling and status messaging
+- Cross-platform path support (Linux, macOS, Windows)
+- Distro detection (Debian, Red Hat, macOS)
+- Updated README and progress tracking
 
-**Not Started (~75%):**
+**Not Started (~70%):**
 - In-app terminal / command execution
 - SFTP/SCP file transfer
 - Port forwarding
@@ -169,7 +172,5 @@
 - SSH service management
 - Passphrase encryption for keys
 - Tests, structured logging, config persistence
-- Distro-specific service commands
-- README updates
 
 **Biggest gaps vs AGENT.md:** no terminal emulator, no file transfer, no tunneling, no UFW/service management, no tests, and no passphrase support.

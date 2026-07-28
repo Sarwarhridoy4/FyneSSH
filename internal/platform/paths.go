@@ -2,7 +2,9 @@ package platform
 
 import (
 	"os"
+	"os/user"
 	"path/filepath"
+	"runtime"
 )
 
 // SSHBasePath returns the path to the user's .ssh directory.
@@ -32,10 +34,35 @@ func PublicKeyPath(name string) string {
 
 func userHome() string {
 	home, _ := os.UserHomeDir()
-	return home
+	if home != "" {
+		return home
+	}
+	if runtime.GOOS == "windows" {
+		if profile := os.Getenv("USERPROFILE"); profile != "" {
+			return profile
+		}
+	}
+	return "."
 }
 
-// IsRootUser reports whether the current effective user is root.
+// CurrentUser returns the current OS user.
+func CurrentUser() string {
+	if u, err := user.Current(); err == nil {
+		return u.Username
+	}
+	if runtime.GOOS == "windows" {
+		if username := os.Getenv("USERNAME"); username != "" {
+			return username
+		}
+	}
+	return "user"
+}
+
+// IsRootUser reports whether the current effective user is root/admin.
 func IsRootUser() bool {
+	if runtime.GOOS == "windows" {
+		_, err := os.Open("\\\\.\\PHYSICALDRIVE0")
+		return err == nil
+	}
 	return os.Geteuid() == 0
 }
