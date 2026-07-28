@@ -20,15 +20,15 @@ import (
 )
 
 const (
-	titleLogin             = "Remote Login"
-	labelUser              = "User:"
-	labelHost              = "Host:"
-	labelPort              = "Port:"
-	placeholderHost        = "host or IP"
-	placeholderPort        = "port"
-	placeholderUser        = "username"
-	placeholderPassword    = "password"
-	statusNotConnected     = "Not connected"
+	titleLogin          = "Remote Login"
+	labelUser           = "User:"
+	labelHost           = "Host:"
+	labelPort           = "Port:"
+	placeholderHost     = "host or IP"
+	placeholderPort     = "port"
+	placeholderUser     = "username"
+	placeholderPassword = "password"
+	statusNotConnected  = "Not connected"
 
 	titleKeys             = "SSH Keys"
 	labelAlgorithm        = "Algorithm:"
@@ -71,25 +71,25 @@ const (
 	msgHostKeyMismatch    = "Host key mismatch for %s"
 	msgTerminalOpened     = "Opening terminal with ssh %s..."
 
-	labelKeyName        = "Key name:"
-	placeholderKeyName  = "e.g. id_ed25519_personal"
-	labelCfgHostAlias   = "Host alias:"
-	labelCfgHostName    = "HostName:"
-	labelCfgUser        = "User:"
-	labelCfgPort        = "Port:"
-	labelCfgAddKeysToAgent   = "AddKeysToAgent:"
-	labelCfgIdentitiesOnly   = "IdentitiesOnly:"
-	labelCfgAliveInterval    = "ServerAliveInterval:"
-	labelCfgAliveCountMax    = "ServerAliveCountMax:"
-	btnSaveConfig      = "Save Key & Update Config"
-	btnAddKnownHost    = "Add to known_hosts"
-	btnUploadAndConfig = "Upload Key & Add Config"
-	btnOpenTerminal    = "Open Terminal"
+	labelKeyName           = "Key name:"
+	placeholderKeyName     = "e.g. id_ed25519_personal"
+	labelCfgHostAlias      = "Host alias:"
+	labelCfgHostName       = "HostName:"
+	labelCfgUser           = "User:"
+	labelCfgPort           = "Port:"
+	labelCfgAddKeysToAgent = "AddKeysToAgent:"
+	labelCfgIdentitiesOnly = "IdentitiesOnly:"
+	labelCfgAliveInterval  = "ServerAliveInterval:"
+	labelCfgAliveCountMax  = "ServerAliveCountMax:"
+	btnSaveConfig          = "Save Key & Update Config"
+	btnAddKnownHost        = "Add to known_hosts"
+	btnUploadAndConfig     = "Upload Key & Add Config"
+	btnOpenTerminal        = "Open Terminal"
 
-	titleInstructions    = "Instructions"
-	tabLogin             = "Login"
-	tabKeys              = "Keys"
-	tabInstructions      = "Instructions"
+	titleInstructions = "Instructions"
+	tabLogin          = "Login"
+	tabKeys           = "Keys"
+	tabInstructions   = "Instructions"
 )
 
 // App holds references to the main window and backend services.
@@ -102,7 +102,7 @@ func NewApp() *App {
 	// TODO: persist app-specific metadata with app.NewWithID.
 	a := app.New()
 	w := a.NewWindow("FyneSSH")
-	w.Resize(fyne.NewSize(900, 700))
+	w.Resize(fyne.NewSize(1000, 800))
 	return &App{window: w}
 }
 
@@ -160,27 +160,27 @@ func (a *App) buildLoginForm() *fyne.Container {
 
 // KeysUI encapsulates the widgets used in the Keys tab.
 type KeysUI struct {
-	algoSelect         *widget.Select
-	comment            *widget.Entry
-	passEntry          *widget.Entry
-	keyName            *widget.Entry
-	privPath           *widget.Entry
-	pubPath            *widget.Entry
-	privDisplay        *widget.Entry
-	pubDisplay         *widget.Entry
-	uploadHost         *widget.Entry
-	uploadUser         *widget.Entry
-	uploadPort         *widget.Entry
-	uploadPass         *widget.Entry
-	cfgHostAlias       *widget.Entry
-	cfgHostName        *widget.Entry
-	cfgUser            *widget.Entry
-	cfgPort            *widget.Entry
-	cfgAddKeysToAgent  *widget.Check
-	cfgIdentitiesOnly  *widget.Check
-	cfgAliveInterval   *widget.Entry
-	cfgAliveCountMax   *widget.Entry
-	status             *widget.Label
+	algoSelect        *widget.Select
+	comment           *widget.Entry
+	passEntry         *widget.Entry
+	keyName           *widget.Entry
+	privPath          *widget.Entry
+	pubPath           *widget.Entry
+	privDisplay       *widget.Entry
+	pubDisplay        *widget.Entry
+	uploadHost        *widget.Entry
+	uploadUser        *widget.Entry
+	uploadPort        *widget.Entry
+	uploadPass        *widget.Entry
+	cfgHostAlias      *widget.Entry
+	cfgHostName       *widget.Entry
+	cfgUser           *widget.Entry
+	cfgPort           *widget.Entry
+	cfgAddKeysToAgent *widget.Check
+	cfgIdentitiesOnly *widget.Check
+	cfgAliveInterval  *widget.Entry
+	cfgAliveCountMax  *widget.Entry
+	status            *widget.Label
 }
 
 func (a *App) buildKeysTab() *fyne.Container {
@@ -347,12 +347,12 @@ func (a *App) buildKeysTab() *fyne.Container {
 		cfgPort := strings.TrimSpace(ui.cfgPort.Text)
 		if hostAlias != "" && hostName != "" && cfgUser != "" {
 			block := platform.HostBlock{
-				Patterns:           []string{hostAlias},
-				HostName:           hostName,
-				User:               cfgUser,
-				AddKeysToAgent:     ui.cfgAddKeysToAgent.Checked,
-				IdentitiesOnly:     ui.cfgIdentitiesOnly.Checked,
-				IdentityFile:       privPath,
+				Patterns:       []string{hostAlias},
+				HostName:       hostName,
+				User:           cfgUser,
+				AddKeysToAgent: ui.cfgAddKeysToAgent.Checked,
+				IdentitiesOnly: ui.cfgIdentitiesOnly.Checked,
+				IdentityFile:   privPath,
 			}
 			if cfgPort != "" && cfgPort != "0" {
 				var p int
@@ -461,27 +461,26 @@ func (a *App) buildKeysTab() *fyne.Container {
 	items := []fyne.CanvasObject{
 		widget.NewLabel(titleKeys),
 		widget.NewLabel(titleKeysSub),
+		widget.NewLabel("Generate Key Pair:"),
 		container.NewGridWithColumns(2,
 			widget.NewLabel(labelAlgorithm), ui.algoSelect,
 			widget.NewLabel(labelKeyName), ui.keyName,
 			widget.NewLabel(labelComment), ui.comment,
 			widget.NewLabel("Passphrase:"), ui.passEntry,
 		),
-		container.NewHBox(generateBtn, saveBtn, saveConfigBtn, copyBtn),
-		ui.status,
-		warning,
-	}
-	if rootWarning != nil {
-		items = append(items, rootWarning)
-	}
-	items = append(items,
+		generateBtn,
+		widget.NewLabel("Generated Keys:"),
 		container.NewGridWithColumns(2,
-			widget.NewLabel(labelUploadUser), ui.uploadUser,
-			widget.NewLabel(labelUploadHost), ui.uploadHost,
-			widget.NewLabel(labelUploadPort), ui.uploadPort,
-			widget.NewLabel(labelUploadPassword), ui.uploadPass,
+			widget.NewLabel(labelPrivKey),
+			widget.NewLabel(labelPubKey),
 		),
-		container.NewHBox(uploadBtn, addKnownHostBtn, openTerminalBtn),
+		container.NewGridWithColumns(2, ui.privDisplay, ui.pubDisplay),
+		widget.NewLabel("Save & Config:"),
+		container.NewHBox(saveBtn, saveConfigBtn, copyBtn),
+		container.NewGridWithColumns(2,
+			container.NewVBox(widget.NewLabel(labelPrivPath), ui.privPath),
+			container.NewVBox(widget.NewLabel(labelPubPath), ui.pubPath),
+		),
 		widget.NewLabel("SSH Config Entry:"),
 		container.NewGridWithColumns(2,
 			widget.NewLabel(labelCfgHostAlias), ui.cfgHostAlias,
@@ -493,16 +492,21 @@ func (a *App) buildKeysTab() *fyne.Container {
 			widget.NewLabel(labelCfgAliveInterval), ui.cfgAliveInterval,
 			widget.NewLabel(labelCfgAliveCountMax), ui.cfgAliveCountMax,
 		),
+		openTerminalBtn,
+		widget.NewLabel("Upload to Server:"),
 		container.NewGridWithColumns(2,
-			container.NewVBox(widget.NewLabel(labelPrivPath), ui.privPath),
-			container.NewVBox(widget.NewLabel(labelPubPath), ui.pubPath),
+			widget.NewLabel(labelUploadUser), ui.uploadUser,
+			widget.NewLabel(labelUploadHost), ui.uploadHost,
+			widget.NewLabel(labelUploadPort), ui.uploadPort,
+			widget.NewLabel(labelUploadPassword), ui.uploadPass,
 		),
-		container.NewGridWithColumns(2,
-			widget.NewLabel(labelPrivKey),
-			widget.NewLabel(labelPubKey),
-		),
-		container.NewGridWithColumns(2, ui.privDisplay, ui.pubDisplay),
-	)
+		container.NewHBox(uploadBtn, addKnownHostBtn),
+		ui.status,
+		warning,
+	}
+	if rootWarning != nil {
+		items = append(items, rootWarning)
+	}
 
 	return container.NewVBox(items...)
 }
@@ -510,127 +514,186 @@ func (a *App) buildKeysTab() *fyne.Container {
 // Run starts the application.
 func (a *App) Run() {
 	tabs := container.NewAppTabs(
-		container.NewTabItem(tabLogin, a.buildLoginForm()),
-		container.NewTabItem(tabKeys, a.buildKeysTab()),
-		container.NewTabItem(tabInstructions, a.buildInstructionsTab()),
+		container.NewTabItem(tabLogin, container.NewScroll(a.buildLoginForm())),
+		container.NewTabItem(tabKeys, container.NewScroll(a.buildKeysTab())),
+		container.NewTabItem(tabInstructions, container.NewScroll(a.buildInstructionsTab())),
 	)
 	// TODO: add File Manager, UFW, Port Config tabs.
-	scroll := container.NewScroll(tabs)
-	a.window.SetContent(scroll)
+	a.window.SetContent(tabs)
 	a.window.ShowAndRun()
 }
 
 func (a *App) buildInstructionsTab() *fyne.Container {
-	instructions := `FyneSSH - SSH Client
+	rawInstructions := `# FyneSSH - SSH Client
 
-OVERVIEW
-FyneSSH is a desktop SSH client that helps you manage SSH keys, connect to remote servers, and organize your SSH configuration.
+**FyneSSH** helps you manage SSH keys, organize ~/.ssh/config, and launch terminal sessions from one place.
 
-TABS
-1. Login - Connect to remote SSH servers
-2. Keys - Generate and manage SSH key pairs
-3. Instructions - This help page
+---
 
-LOGIN TAB
-- Enter the remote host (hostname or IP address)
-- Enter the port (default: 22)
-- Enter your username
-- Click "Open Terminal" to launch your system terminal with ssh
-  * Uses: ssh user@host -p port
-  * Your system's default terminal emulator will be used
+## Tabs
 
-SSH KEYS TAB
+- **Login** — Launch a terminal SSH session
+- **Keys** — Generate keys, update SSH config, upload public keys
+- **Instructions** — This help page
 
-Generate a Key Pair:
-1. Select algorithm: Ed25519 (recommended) or RSA
-2. Enter a key name/alias (e.g. id_ed25519_personal, id_ed25519_work)
-   - This determines the filename: ~/.ssh/{key_name}
-3. Optional: Add a comment
-4. Optional: Add a passphrase for encryption
-5. Click "Generate" to create the key pair
-6. The private and public keys will appear in the display areas
+---
 
-Save Keys:
-- Click "Save" to write keys to disk
-- Default location: ~/.ssh/{key_name} and ~/.ssh/{key_name}.pub
-- Private key permissions: 0600 (read/write for owner only)
-- Public key permissions: 0644
+## Login Tab
 
-Save Key & Update Config:
-- Saves the key pair AND adds/updates an entry in ~/.ssh/config
-- Fill in the SSH Config Entry section:
-  * Host alias: Short name for the host (e.g. github, homelab)
-  * HostName: Actual hostname or IP address
-  * User: Remote username
-  * Port: SSH port (default 22)
-  * AddKeysToAgent: Automatically add key to ssh-agent (yes/no)
-  * IdentitiesOnly: Only use specified identity files (yes/no)
-  * ServerAliveInterval: Keep-alive interval in seconds
-  * ServerAliveCountMax: Maximum keep-alive count
-- If the Host alias already exists in config, it will be updated
+Use this tab to quickly open a terminal and connect via SSH.
 
-Open Terminal:
-- Fill in the SSH Config Entry fields (at least Host alias, HostName, User)
-- Click "Open Terminal" to launch your system terminal with ssh
-  * Uses: ssh <host_alias>
-  * Reads from ~/.ssh/config for all settings
-  * Your system's default terminal emulator will be used
+1. Enter **Host** — hostname or IP address
+2. Enter **Port** — default is 22
+3. Enter **User** — remote username
+4. Click **Open Terminal**
 
-Example SSH config entry:
-Host github
-    HostName github.com
-    User git
-    IdentityFile ~/.ssh/id_ed25519_personal
-    AddKeysToAgent yes
-    IdentitiesOnly yes
+FyneSSH launches your system terminal with:
 
-Upload Public Key:
-- Enter the remote server details (host, user, port, password)
-- Click "Upload to Server" to append your public key to ~/.ssh/authorized_keys on the remote server
-- This enables passwordless SSH login
+    ssh user@host -p port
 
-Add to known_hosts:
-- Enter a hostname in the Upload Host field
-- Click "Add to known_hosts" to record the server's host key
-- This prevents man-in-the-middle attacks
+The terminal window handles the actual session. Password prompts and interactive shells run there, not inside the app.
 
-Copy Public Key:
-- Click "Copy Public Key" to copy the public key to clipboard
-- Paste it into remote server's authorized_keys file manually
+---
 
-KEY NAMES / ALIASES
-Use descriptive key names to avoid confusion:
-- id_ed25519_personal - Personal GitHub account
-- id_ed25519_work - Work servers
-- id_ed25519_homelab - Homelab machines
-- id_ed25519_backup - Backup servers
+## Keys Tab
 
-KEY FILE LOCATIONS
-All keys are saved to: ~/.ssh/
-- Private key: ~/.ssh/{key_name}
-- Public key: ~/.ssh/{key_name}.pub
-- SSH config: ~/.ssh/config
-- Known hosts: ~/.ssh/known_hosts
+### 1. Generate Key Pair
 
-SECURITY NOTES
-- Never share your private key
-- Use strong passphrases for sensitive keys
-- Ed25519 is recommended over RSA for better security and performance
-- known_hosts prevents man-in-the-middle attacks
-- Run "ssh-add" to add keys to ssh-agent for passwordless auth
+- **Algorithm** — ed25519 (recommended) or rsa
+- **Key name** — Filename stem, e.g. id_ed25519_personal
+- **Comment** — Optional key comment
+- **Passphrase** — Optional encryption passphrase
 
-TROUBLESHOOTING
-- Permission denied: Check key file permissions (private key should be 600)
-- Connection refused: Verify host, port, and firewall settings
-- Host key mismatch: Remove old entry from ~/.ssh/known_hosts
-- Config not updating: Check write permissions on ~/.ssh/config
+Click **Generate** to create the key pair in memory.
+
+### 2. Review Generated Keys
+
+The **Private key** and **Public key** panels show the generated material.
+
+- **Never share** the private key.
+- The public key is in OpenSSH authorized_keys format.
+
+### 3. Save Keys
+
+Click **Save** to write files to ~/.ssh/:
+
+- **Private key** — ~/.ssh/{key_name} (permissions: 0600)
+- **Public key** — ~/.ssh/{key_name}.pub (permissions: 0644)
+
+### 4. Save Key & Update Config
+
+This saves the keys **and** writes a Host block into ~/.ssh/config.
+
+- **Host alias** — Short config name, e.g. github, homelab
+- **HostName** — Real hostname or IP
+- **User** — Remote username
+- **Port** — SSH port, default 22
+- **AddKeysToAgent** — Auto-load key into ssh-agent
+- **IdentitiesOnly** — Use only the specified key
+- **ServerAliveInterval** — Keep-alive seconds
+- **ServerAliveCountMax** — Max keep-alive probes
+
+If the **Host alias** already exists in ~/.ssh/config, it will be **updated**.
+
+#### Example config block
+
+    Host github
+        HostName github.com
+        User git
+        IdentityFile ~/.ssh/id_ed25519_personal
+        AddKeysToAgent yes
+        IdentitiesOnly yes
+
+    Host homelab.com
+        HostName 192.168.122.6
+        User sarwar
+        Port 9255
+        IdentityFile ~/.ssh/id_ed25519
+        IdentitiesOnly yes
+        ServerAliveInterval 20
+        ServerAliveCountMax 2
+
+### 5. Open Terminal
+
+After filling the **SSH Config Entry** section, click **Open Terminal**.
+
+FyneSSH reads ~/.ssh/config and launches your system terminal with:
+
+    ssh <host_alias>
+
+All configured options — IdentityFile, port, user, keep-alive — are handled by your system SSH client.
+
+### 6. Upload Public Key
+
+Use this to copy the public key to a remote server.
+
+1. Enter remote **Host**, **User**, **Port**, and **Password**
+2. Click **Upload to Server**
+
+The public key is appended to ~/.ssh/authorized_keys on the remote host.
+
+### 7. Add to known_hosts
+
+1. Enter the target hostname in **Upload Host**
+2. Click **Add to known_hosts**
+
+FyneSSH connects and records the host key in ~/.ssh/known_hosts to prevent man-in-the-middle attacks.
+
+### 8. Copy Public Key
+
+Click **Copy Public Key** to copy the public key to clipboard. Paste it manually into authorized_keys if you prefer.
+
+---
+
+## Key Naming Tips
+
+Use descriptive names to avoid confusion:
+
+- id_ed25519_personal — personal GitHub
+- id_ed25519_work — work servers
+- id_ed25519_homelab — homelab machines
+- id_ed25519_backup — backup servers
+
+---
+
+## File Locations
+
+All paths are under ~/.ssh/:
+
+- **Private key** — ~/.ssh/{key_name}
+- **Public key** — ~/.ssh/{key_name}.pub
+- **SSH config** — ~/.ssh/config
+- **Known host keys** — ~/.ssh/known_hosts
+- **Remote authorized keys** — ~/.ssh/authorized_keys
+
+---
+
+## Security Notes
+
+- **Never share** your private key
+- Use **Ed25519** over RSA when possible
+- Add a **passphrase** for sensitive keys
+- known_hosts protects against man-in-the-middle attacks
+- Use ssh-add to load keys into ssh-agent
+
+---
+
+## Troubleshooting
+
+- **Permission denied** — Ensure private key is 0600
+- **Connection refused** — Verify host, port, firewall
+- **Host key mismatch** — Remove old entry from ~/.ssh/known_hosts
+- **Config not updating** — Check write permissions on ~/.ssh/config
+- **Terminal won't open** — Ensure a terminal emulator is installed and in PATH
 `
+	instructions := strings.ReplaceAll(rawInstructions, "«", "`")
+	instructions = strings.ReplaceAll(instructions, "»", "`")
 
 	richText := widget.NewRichTextFromMarkdown(instructions)
 	richText.Wrapping = fyne.TextWrapWord
 
 	scroll := container.NewScroll(richText)
-	scroll.SetMinSize(fyne.NewSize(800, 500))
+	scroll.SetMinSize(fyne.NewSize(900, 500))
 
 	return container.NewVBox(
 		widget.NewLabel(titleInstructions),
@@ -638,7 +701,6 @@ TROUBLESHOOTING
 		scroll,
 	)
 }
-
 func uploadPublicKey(pubKeyPath, user, host, port, password string) error {
 	portNum := parsePort(port)
 
