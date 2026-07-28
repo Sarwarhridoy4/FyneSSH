@@ -461,27 +461,26 @@ func (a *App) buildKeysTab() *fyne.Container {
 	items := []fyne.CanvasObject{
 		widget.NewLabel(titleKeys),
 		widget.NewLabel(titleKeysSub),
+		widget.NewLabel("Generate Key Pair:"),
 		container.NewGridWithColumns(2,
 			widget.NewLabel(labelAlgorithm), ui.algoSelect,
 			widget.NewLabel(labelKeyName), ui.keyName,
 			widget.NewLabel(labelComment), ui.comment,
 			widget.NewLabel("Passphrase:"), ui.passEntry,
 		),
-		container.NewHBox(generateBtn, saveBtn, saveConfigBtn, copyBtn),
-		ui.status,
-		warning,
-	}
-	if rootWarning != nil {
-		items = append(items, rootWarning)
-	}
-	items = append(items,
+		generateBtn,
+		widget.NewLabel("Generated Keys:"),
 		container.NewGridWithColumns(2,
-			widget.NewLabel(labelUploadUser), ui.uploadUser,
-			widget.NewLabel(labelUploadHost), ui.uploadHost,
-			widget.NewLabel(labelUploadPort), ui.uploadPort,
-			widget.NewLabel(labelUploadPassword), ui.uploadPass,
+			widget.NewLabel(labelPrivKey),
+			widget.NewLabel(labelPubKey),
 		),
-		container.NewHBox(uploadBtn, addKnownHostBtn, openTerminalBtn),
+		container.NewGridWithColumns(2, ui.privDisplay, ui.pubDisplay),
+		widget.NewLabel("Save & Config:"),
+		container.NewHBox(saveBtn, saveConfigBtn, copyBtn),
+		container.NewGridWithColumns(2,
+			container.NewVBox(widget.NewLabel(labelPrivPath), ui.privPath),
+			container.NewVBox(widget.NewLabel(labelPubPath), ui.pubPath),
+		),
 		widget.NewLabel("SSH Config Entry:"),
 		container.NewGridWithColumns(2,
 			widget.NewLabel(labelCfgHostAlias), ui.cfgHostAlias,
@@ -493,16 +492,21 @@ func (a *App) buildKeysTab() *fyne.Container {
 			widget.NewLabel(labelCfgAliveInterval), ui.cfgAliveInterval,
 			widget.NewLabel(labelCfgAliveCountMax), ui.cfgAliveCountMax,
 		),
+		openTerminalBtn,
+		widget.NewLabel("Upload to Server:"),
 		container.NewGridWithColumns(2,
-			container.NewVBox(widget.NewLabel(labelPrivPath), ui.privPath),
-			container.NewVBox(widget.NewLabel(labelPubPath), ui.pubPath),
+			widget.NewLabel(labelUploadUser), ui.uploadUser,
+			widget.NewLabel(labelUploadHost), ui.uploadHost,
+			widget.NewLabel(labelUploadPort), ui.uploadPort,
+			widget.NewLabel(labelUploadPassword), ui.uploadPass,
 		),
-		container.NewGridWithColumns(2,
-			widget.NewLabel(labelPrivKey),
-			widget.NewLabel(labelPubKey),
-		),
-		container.NewGridWithColumns(2, ui.privDisplay, ui.pubDisplay),
-	)
+		container.NewHBox(uploadBtn, addKnownHostBtn),
+		ui.status,
+		warning,
+	}
+	if rootWarning != nil {
+		items = append(items, rootWarning)
+	}
 
 	return container.NewVBox(items...)
 }
